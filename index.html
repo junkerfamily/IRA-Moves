@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Fund Loan Payoff Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #3498db;
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .loan-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .loan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .slider-container {
+            margin: 20px 0;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .results {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .results h2 {
+            margin-top: 0;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .tax-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .warning {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Retirement Fund Loan Payoff Calculator</h1>
+        
+        <div class="warning">
+            <strong>Disclaimer:</strong> This calculator is for educational purposes only. Consult with a financial advisor before making major financial decisions.
+        </div>
+        
+        <!-- Personal Information Section -->
+        <div class="section">
+            <h2>📊 Personal Financial Information</h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label for="taxableIncome">Annual Taxable Income ($)</label>
+                    <input type="number" id="taxableIncome" placeholder="75000" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="filingStatus">Filing Status</label>
+                    <select id="filingStatus">
+                        <option value="single">Single</option>
+                        <option value="marriedJoint">Married Filing Jointly</option>
+                        <option value="headOfHousehold">Head of Household</option>
+                        <option value="marriedSeparate">Married Filing Separately</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="retirementBalance">Available for Withdrawal ($)</label>
+                    <input type="number" id="retirementBalance" placeholder="50000" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="expectedReturn">Expected Annual Return on Retirement Account (%)</label>
+                    <input type="number" id="expectedReturn" placeholder="7" min="0" max="20" step="0.1">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loans Section -->
+        <div class="section">
+            <h2>🏦 Current Loans</h2>
+            <button class="btn btn-primary" onclick="addLoan()">+ Add Loan</button>
+            <div id="loansList"></div>
+        </div>
+        
+        <!-- Calculator Section -->
+        <div class="section" id="calculatorSection" style="display: none;">
+            <h2>🎯 Payoff Strategy</h2>
+            <div class="form-group">
+                <label for="withdrawalSlider">Retirement Withdrawal Amount: $<span id="withdrawalAmount">0</span></label>
+                <input type="range" id="withdrawalSlider" class="slider" min="0" max="100000" value="0" step="100">
+            </div>
+            
+            <div id="loanSliders"></div>
+            
+            <div class="form-group">
+                <label>Remaining Cash: $<span id="remainingCash">0</span></label>
+            </div>
+            
+            <div class="form-group" style="background: #e8f5e8; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60;">
+                <label>
+                    <input type="checkbox" id="rothRedirectCheck" style="margin-right: 10px;">
+                    <strong>Redirect freed loan payments to Roth IRA?</strong>
+                </label>
+                <div id="rothRedirectOptions" style="display: none; margin-top: 15px;">
+                    <label>Monthly amount to redirect to Roth IRA: $<span id="rothRedirectAmount">0</span> (<span id="rothRedirectPercent">0</span>% of loan payments)</label>
+                    <input type="range" id="rothRedirectSlider" class="slider" min="0" max="1000" value="0" step="10">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        <em>Note: This calculates the future value of redirecting loan payments into a Roth IRA with the same expected return.</em>
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="results" class="results" style="display: none;">
+            <h2>📈 Financial Impact Analysis</h2>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // 2024 Tax Brackets
+        const taxBrackets = {
+            single: [
+                { min: 0, max: 11600, rate: 0.10 },
+                { min: 11601, max: 47150, rate: 0.12 },
+                { min: 47151, max: 100525, rate: 0.22 },
+                { min: 100526, max: 191950, rate: 0.24 },
+                { min: 191951, max: 243725, rate: 0.32 },
+                { min: 243726, max: 609350, rate: 0.35 },
+                { min: 609351, max: Infinity, rate: 0.37 }
+            ],
+            marriedJoint: [
+                { min: 0, max: 23200, rate: 0.10 },
+                { min: 23201, max: 94300, rate: 0.12 },
+                { min: 94301, max: 201050, rate: 0.22 },
+                { min: 201051, max: 383900, rate: 0.24 },
+                { min: 383901, max: 487450, rate: 0.32 },
+                { min: 487451, max: 731200, rate: 0.35 },
+                { min: 731201, max: Infinity, rate: 0.37 }
+            ],
+            headOfHousehold: [
+                { min: 0, max: 16550, rate: 0.10 },
+                { min: 16551, max: 63100, rate: 0.12 },
+                { min: 63101, max: 100500, rate: 0.22 },
+                { min: 100501, max: 191950, rate: 0.24 },
+                { min: 191951, max: 243700, rate: 0.32 },
+                { min: 243701, max: 609350, rate: 0.35 },
+                { min: 609351, max: Infinity, rate: 0.37 }
+            ],
+            marriedSeparate: [
+                { min: 0, max: 11600, rate: 0.10 },
+                { min: 11601, max: 47150, rate: 0.12 },
+                { min: 47151, max: 100525, rate: 0.22 },
+                { min: 100526, max: 191950, rate: 0.24 },
+                { min: 191951, max: 243725, rate: 0.32 },
+                { min: 243726, max: 365600, rate: 0.35 },
+                { min: 365601, max: Infinity, rate: 0.37 }
+            ]
+        };
+        
+        let loans = [];
+        let loanCounter = 0;
+        
+        function addLoan() {
+            const loanId = 'loan_' + loanCounter++;
+            const loanDiv = document.createElement('div');
+            loanDiv.className = 'loan-item';
+            loanDiv.innerHTML = `
+                <div class="loan-header">
+                    <h3>Loan ${loanCounter}</h3>
+                    <button class="btn btn-danger" onclick="removeLoan('${loanId}')">Remove</button>
+                </div>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Purpose/Description</label>
+                        <input type="text" id="${loanId}_purpose" placeholder="e.g., Car loan">
+                    </div>
+                    <div class="form-group">
+                        <label>Interest Rate (%)</label>
+                        <input type="number" id="${loanId}_rate" placeholder="5.5" min="0" max="50" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Balance ($)</label>
+                        <input type="number" id="${loanId}_balance" placeholder="15000" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Payment ($)</label>
+                        <input type="number" id="${loanId}_payment" placeholder="350" min="0">
+                    </div>
+                </div>
+            `;
+            loanDiv.id = loanId;
+            
+            document.getElementById('loansList').appendChild(loanDiv);
+            loans.push(loanId);
+            
+            // Add event listeners
+            ['purpose', 'rate', 'balance', 'payment'].forEach(field => {
+                document.getElementById(`${loanId}_${field}`).addEventListener('input', updateCalculator);
+            });
+            
+            updateCalculator();
+        }
+        
+        function removeLoan(loanId) {
+            document.getElementById(loanId).remove();
+            loans = loans.filter(id => id !== loanId);
+            updateCalculator();
+        }
+        
+        function calculateTax(income, filingStatus) {
+            const brackets = taxBrackets[filingStatus];
+            let totalTax = 0;
+            let remainingIncome = income;
+            
+            for (const bracket of brackets) {
+                if (remainingIncome <= 0) break;
+                
+                const taxableInThisBracket = Math.min(remainingIncome, bracket.max - bracket.min + 1);
+                totalTax += taxableInThisBracket * bracket.rate;
+                remainingIncome -= taxableInThisBracket;
+            }
+            
+            return totalTax;
+        }
+        
+        function updateCalculator() {
+            const hasLoans = loans.length > 0;
+            const calculatorSection = document.getElementById('calculatorSection');
+            const resultsSection = document.getElementById('results');
+            
+            if (hasLoans) {
+                calculatorSection.style.display = 'block';
+                resultsSection.style.display = 'block';
+                updateSliders();
+                calculateResults();
+            } else {
+                calculatorSection.style.display = 'none';
+                resultsSection.style.display = 'none';
+            }
+        }
+        
+        function updateSliders() {
+            const retirementBalance = parseFloat(document.getElementById('retirementBalance').value) || 0;
+            const withdrawalSlider = document.getElementById('withdrawalSlider');
+            withdrawalSlider.max = retirementBalance;
+            
+            // Create loan payoff sliders
+            const slidersDiv = document.getElementById('loanSliders');
+            slidersDiv.innerHTML = '';
+            
+            let totalMonthlyPayments = 0;
+            
+            loans.forEach(loanId => {
+                const balance = parseFloat(document.getElementById(`${loanId}_balance`).value) || 0;
+                const monthlyPayment = parseFloat(document.getElementById(`${loanId}_payment`).value) || 0;
+                const purpose = document.getElementById(`${loanId}_purpose`).value || 'Loan';
+                
+                totalMonthlyPayments += monthlyPayment;
+                
+                const sliderDiv = document.createElement('div');
+                sliderDiv.className = 'slider-container';
+                sliderDiv.innerHTML = `
+                    <label>Pay towards ${purpose}: $<span id="${loanId}_paymentAmount">${balance.toLocaleString()}</span></label>
+                    <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="${balance}" step="10">
+                `;
+                slidersDiv.appendChild(sliderDiv);
+                
+                document.getElementById(`${loanId}_paymentSlider`).addEventListener('input', calculateResults);
+            });
+            
+            // Update Roth redirect slider max
+            const rothSlider = document.getElementById('rothRedirectSlider');
+            if (rothSlider) {
+                rothSlider.max = totalMonthlyPayments;
+                rothSlider.value = Math.min(rothSlider.value, totalMonthlyPayments);
+            }
+        }
+        
+        function calculateResults() {
+            console.log('=== calculateResults() called ===');
+            const taxableIncome = parseFloat(document.getElementById('taxableIncome').value) || 0;
+            const filingStatus = document.getElementById('filingStatus').value;
+            const retirementBalance = parseFloat(document.getElementById('retirementBalance').value) || 0;
+            const expectedReturn = parseFloat(document.getElementById('expectedReturn').value) / 100 || 0.07;
+            const withdrawal = parseFloat(document.getElementById('withdrawalSlider').value) || 0;
+            
+            // Update withdrawal amount display
+            document.getElementById('withdrawalAmount').textContent = withdrawal.toLocaleString();
+            
+            // Calculate total loan payments
+            let totalLoanPayments = 0;
+            loans.forEach(loanId => {
+                const paymentSlider = document.getElementById(`${loanId}_paymentSlider`);
+                if (paymentSlider) {
+                    const payment = parseFloat(paymentSlider.value) || 0;
+                    totalLoanPayments += payment;
+                    document.getElementById(`${loanId}_paymentAmount`).textContent = payment.toLocaleString();
+                }
+            });
+            
+            const remainingCash = withdrawal - totalLoanPayments;
+            document.getElementById('remainingCash').textContent = remainingCash.toLocaleString();
+            
+            // Calculate tax implications
+            const newTaxableIncome = taxableIncome + withdrawal;
+            const currentTax = calculateTax(taxableIncome, filingStatus);
+            const newTax = calculateTax(newTaxableIncome, filingStatus);
+            const additionalTax = newTax - currentTax;
+            
+            // Calculate after-tax withdrawal
+            const afterTaxWithdrawal = withdrawal - additionalTax;
+            
+            // Calculate wealth impact
+            const newRetirementBalance = retirementBalance - withdrawal;
+            const futureValueLost = withdrawal * Math.pow(1 + expectedReturn, 10); // 10-year projection
+            
+            // Calculate Roth IRA redirection impact
+            const rothRedirectEnabled = document.getElementById('rothRedirectCheck').checked;
+            const rothMonthlyAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
+            let rothFutureValue = 0;
+            
+            if (rothRedirectEnabled && rothMonthlyAmount > 0) {
+                // Calculate future value of monthly Roth contributions over 10 years
+                // Using future value of annuity formula: PMT * (((1 + r)^n - 1) / r)
+                const monthlyRate = expectedReturn / 12;
+                const months = 10 * 12;
+                rothFutureValue = rothMonthlyAmount * (Math.pow(1 + monthlyRate, months) - 1) / monthlyRate;
+            }
+            
+            // Calculate loan savings
+            let totalInterestSaved = 0;
+            let monthsOfPaymentsSaved = 0;
+            
+            console.log(`Starting loan calculations. Number of loans: ${loans.length}`);
+            
+            loans.forEach(loanId => {
+                console.log(`Processing loan: ${loanId}`);
+                const balance = parseFloat(document.getElementById(`${loanId}_balance`).value) || 0;
+                const rate = parseFloat(document.getElementById(`${loanId}_rate`).value) / 100 / 12 || 0;
+                const monthlyPayment = parseFloat(document.getElementById(`${loanId}_payment`).value) || 0;
+                const paymentSlider = document.getElementById(`${loanId}_paymentSlider`);
+                const paymentMade = paymentSlider ? parseFloat(paymentSlider.value) || 0 : 0;
+                
+                console.log(`Loan ${loanId} raw values:`);
+                console.log(`  Balance input: ${document.getElementById(`${loanId}_balance`).value}`);
+                console.log(`  Rate input: ${document.getElementById(`${loanId}_rate`).value}`);
+                console.log(`  Payment input: ${document.getElementById(`${loanId}_payment`).value}`);
+                console.log(`  Slider exists: ${paymentSlider !== null}`);
+                console.log(`  Slider value: ${paymentSlider ? paymentSlider.value : 'N/A'}`);
+                
+                console.log(`Loan ${loanId} parsed values:`);
+                console.log(`  Balance: $${balance}`);
+                console.log(`  Rate: ${rate * 12 * 100}% annual (${rate * 100}% monthly)`);
+                console.log(`  Monthly Payment: $${monthlyPayment}`);
+                console.log(`  Payment Made: $${paymentMade}`);
+                
+                if (balance > 0 && rate > 0 && monthlyPayment > 0) {
+                    console.log(`  ✓ Loan qualifies for calculation`);
+                    const newBalance = Math.max(0, balance - paymentMade);
+                    console.log(`  New Balance: $${newBalance}`);
+                    
+                    // Check if loan formula will work
+                    const denominator = monthlyPayment;
+                    const numerator = balance * rate;
+                    console.log(`  Formula check: balance*rate=${numerator}, monthlyPayment=${denominator}`);
+                    
+                    if (numerator >= denominator) {
+                        console.log(`  ⚠️ WARNING: Monthly payment too low to pay off loan (payment < interest)`);
+                        return;
+                    }
+                    
+                    // Calculate months to pay off loan using the correct amortization formula
+                    // Formula: n = -log(1 - (P*r)/M) / log(1 + r)
+                    // Where P = principal, r = monthly rate, M = monthly payment
+                    const originalMonths = -Math.log(1 - (balance * rate) / monthlyPayment) / Math.log(1 + rate);
+                    const newMonths = newBalance > 0 ? -Math.log(1 - (newBalance * rate) / monthlyPayment) / Math.log(1 + rate) : 0;
+                    
+                    console.log(`  Original months to payoff: ${originalMonths.toFixed(1)}`);
+                    console.log(`  New months to payoff: ${newMonths.toFixed(1)}`);
+                    
+                    // Calculate total interest for original loan
+                    const originalTotalPayments = originalMonths * monthlyPayment;
+                    const originalTotalInterest = originalTotalPayments - balance;
+                    
+                    // Calculate total interest for remaining loan
+                    const newTotalPayments = newMonths * monthlyPayment;
+                    const newTotalInterest = newBalance > 0 ? newTotalPayments - newBalance : 0;
+                    
+                    // Debug the calculation
+                    console.log(`  Calculation check:`);
+                    console.log(`    Original: ${originalMonths.toFixed(1)} months × $${monthlyPayment} = $${originalTotalPayments.toFixed(2)} total payments`);
+                    console.log(`    Original: $${originalTotalPayments.toFixed(2)} - $${balance} = $${originalTotalInterest.toFixed(2)} interest`);
+                    console.log(`    New: ${newMonths.toFixed(1)} months × $${monthlyPayment} = $${newTotalPayments.toFixed(2)} total payments`);
+                    console.log(`    New: $${newTotalPayments.toFixed(2)} - $${newBalance} = $${newTotalInterest.toFixed(2)} interest`);
+                    
+                    console.log(`  Original total payments: $${originalTotalPayments.toFixed(2)}`);
+                    console.log(`  Original total interest: $${originalTotalInterest.toFixed(2)}`);
+                    console.log(`  New total payments: $${newTotalPayments.toFixed(2)}`);
+                    console.log(`  New total interest: $${newTotalInterest.toFixed(2)}`);
+                    
+                    // Interest saved is the difference
+                    const interestSaved = originalTotalInterest - newTotalInterest;
+                    console.log(`  Interest saved: $${interestSaved.toFixed(2)}`);
+                    
+                    totalInterestSaved += Math.max(0, interestSaved);
+                    monthsOfPaymentsSaved += (originalMonths - newMonths);
+                } else {
+                    console.log(`  ✗ Loan does not qualify: balance=${balance}, rate=${rate}, payment=${monthlyPayment}`);
+                }
+            });
+            
+            console.log(`Total interest saved across all loans: $${totalInterestSaved.toFixed(2)}`);
+            
+            // Display results
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContent.innerHTML = `
+                <div class="metric">
+                    <span>Retirement Withdrawal:</span>
+                    <span class="metric-value">$${withdrawal.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span>Additional Income Tax:</span>
+                    <span class="metric-value">$${additionalTax.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span>After-Tax Cash Available:</span>
+                    <span class="metric-value">$${afterTaxWithdrawal.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span>Applied to Loans:</span>
+                    <span class="metric-value">$${totalLoanPayments.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span>Remaining Cash:</span>
+                    <span class="metric-value">$${remainingCash.toLocaleString()}</span>
+                </div>
+                <div class="metric">
+                    <span>New Retirement Balance:</span>
+                    <span class="metric-value">$${newRetirementBalance.toLocaleString()}</span>
+                </div>
+                <hr style="border-color: rgba(255,255,255,0.3);">
+                <div class="metric">
+                    <span>Estimated Interest Saved:</span>
+                    <span class="metric-value">$${totalInterestSaved.toLocaleString()}</span>
+                </div>
+                <div class="metric" style="background: rgba(155, 89, 182, 0.3); border-left: 4px solid #9b59b6;">
+                    <span><strong>Immediate Impact (After Taxes):</strong></span>
+                    <span class="metric-value"><strong>${(totalInterestSaved - additionalTax) >= 0 ? '+' : ''}$${(totalInterestSaved - additionalTax).toLocaleString()}</strong></span>
+                </div>
+                <div class="metric">
+                    <span>Future Value Lost (10 years):</span>
+                    <span class="metric-value">-$${futureValueLost.toLocaleString()}</span>
+                </div>
+                ${rothRedirectEnabled ? `
+                <div class="metric" style="background: rgba(39, 174, 96, 0.2); border-left: 4px solid #27ae60;">
+                    <span>Roth IRA Future Value (10 years):</span>
+                    <span class="metric-value">+$${rothFutureValue.toLocaleString()}</span>
+                </div>` : ''}
+                <div class="metric">
+                    <span><strong>Net Wealth Impact (10-year):</strong></span>
+                    <span class="metric-value"><strong>${(totalInterestSaved - futureValueLost - additionalTax + rothFutureValue) >= 0 ? '+' : ''}$${(totalInterestSaved - futureValueLost - additionalTax + rothFutureValue).toLocaleString()}</strong></span>
+                </div>
+            `;
+            
+            if (withdrawal > afterTaxWithdrawal) {
+                resultsContent.innerHTML += `
+                    <div class="tax-info">
+                        <strong>Tax Impact:</strong> Your withdrawal will increase your taxable income from $${taxableIncome.toLocaleString()} to $${newTaxableIncome.toLocaleString()}, resulting in $${additionalTax.toLocaleString()} additional tax.
+                    </div>
+                `;
+            }
+        }
+        
+        // Update Roth redirect display
+        function updateRothDisplay() {
+            const rothAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
+            const totalMonthlyPayments = loans.reduce((sum, loanId) => {
+                return sum + (parseFloat(document.getElementById(`${loanId}_payment`).value) || 0);
+            }, 0);
+            
+            document.getElementById('rothRedirectAmount').textContent = rothAmount.toLocaleString();
+            const percentage = totalMonthlyPayments > 0 ? Math.round((rothAmount / totalMonthlyPayments) * 100) : 0;
+            document.getElementById('rothRedirectPercent').textContent = percentage;
+        }
+        
+        // Event listeners
+        document.getElementById('withdrawalSlider').addEventListener('input', calculateResults);
+        document.getElementById('rothRedirectCheck').addEventListener('change', function() {
+            const options = document.getElementById('rothRedirectOptions');
+            options.style.display = this.checked ? 'block' : 'none';
+            calculateResults();
+        });
+        document.getElementById('rothRedirectSlider').addEventListener('input', function() {
+            updateRothDisplay();
+            calculateResults();
+        });
+        
+        ['taxableIncome', 'filingStatus', 'retirementBalance', 'expectedReturn'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateCalculator);
+        });
+        
+        // Initialize with one loan
+        addLoan();
+    </script>
+</body>
+</html>
