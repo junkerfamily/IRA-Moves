@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Standard Deduction Docs</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px; line-height: 1.55; color: #2c3e50; }
+    h1 { margin-top: 0; }
+    a { color: #3498db; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .callout { background: #f5f9ff; border-left: 4px solid #3498db; padding: 12px 14px; border-radius: 6px; margin: 14px 0; }
+    code, pre { background: #f6f8fa; border-radius: 4px; padding: 2px 4px; }
+    pre { padding: 10px; overflow: auto; }
+    ul { margin: 0.5rem 0 1rem 1.3rem; }
+  </style>
+</head>
+<body>
+  <h1>Standard Deduction Modeling (2024)</h1>
+  <div class="callout">This page summarizes how the calculator models standard vs itemized deductions, age 65 adders, the shield effect, and the separate early withdrawal penalty.</div>
+
+  <h2>What this models</h2>
+  <ul>
+    <li>Computes taxable income before vs after the withdrawal</li>
+    <li>Applies 2024 progressive federal brackets for the selected filing status</li>
+    <li>Optionally adds a flat state tax rate applied to the full withdrawal</li>
+    <li>Models the 10% early withdrawal penalty as a separate toggle</li>
+  </ul>
+
+  <h2>2024 standard deduction (approx)</h2>
+  <ul>
+    <li>Single: Base $14,600 | Age 65 add-on: $1,900</li>
+    <li>Married Filing Jointly: Base $29,200 | Age 65 add-on: $1,500 per spouse (up to $3,000)</li>
+    <li>Head of Household: Base $21,900 | Age 65 add-on: $1,900</li>
+    <li>Married Filing Separately: Base $14,600 | Age 65 add-on: $1,500</li>
+  </ul>
+  <p><strong>Note:</strong> The Age 65 option only affects the deduction. It does <em>not</em> control the 10% early withdrawal penalty; that’s the separate toggle in the Payoff Strategy section for being under age 59½.</p>
+
+  <h2>How the deduction is chosen</h2>
+  <pre><code>if (Apply Standard Deduction checked) {
+  Deduction = Itemized (&gt;0) ? Itemized : (Base Std + Age 65 adders)
+} else {
+  Deduction = Itemized (&gt;0) ? Itemized : 0 // treat income as already taxable
+}
+Taxable_before = max(0, Gross - Deduction)
+Taxable_after  = max(0, Gross + Withdrawal - Deduction)
+Additional Federal Tax = Tax(Taxable_after) - Tax(Taxable_before)
+State (optional) ≈ StateRate × Withdrawal
+  </code></pre>
+
+  <h2>Shield effect</h2>
+  <pre><code>Incremental_taxable = Taxable_after - Taxable_before
+Shielded_by_deduction = max(0, Withdrawal - Incremental_taxable)
+  </code></pre>
+  <p>The shield estimates how much of the withdrawal is effectively not federally taxed because deduction space absorbs it.</p>
+
+  <h2>Penalty</h2>
+  <p>If the “Early Withdrawal Penalty” toggle is enabled, the penalty equals <code>10% × Withdrawal</code> and is added on top of taxes. If you’re 59½ or older, leave it off.</p>
+
+  <h2>Examples</h2>
+  <p><strong>Single, Gross $60k, Withdrawal $10k, Std Deduction:</strong><br>
+    Deduction = $14,600 → Additional taxable = $10,000 → Shield = $0 → Fed tax is delta of bracketed tax; add state (if any); add penalty (if toggled).
+  </p>
+  <p><strong>MFJ (both 65+), Gross $20k, Withdrawal $10k, Std Deduction:</strong><br>
+    Deduction ≈ $32,200 → Taxable_before = 0, Taxable_after = 0 → Shield ≈ $10,000 → Fed additional ≈ $0.
+  </p>
+
+  <h2>Code pointers</h2>
+  <ul>
+    <li>Deduction logic: <code>computeTaxable(...)</code> in <code>index.html</code></li>
+    <li>Federal tax: <code>calculateTax(...)</code> with 2024 brackets</li>
+    <li>Shield: <code>shieldPortion = max(0, withdrawal - incrementalTaxable)</code></li>
+    <li>Penalty toggle: <code>#earlyPenaltyCheck</code></li>
+  </ul>
+
+  <p><a href="index.html">← Back to Calculator</a></p>
+</body>
+</html>
