@@ -1,0 +1,78 @@
+# GPT Review 1 – Retirement Fund Loan Payoff Calculator
+
+## Overview
+This document summarizes the initial code / financial model review and the improvements applied on (date of work) 2025-09-17.
+
+## Original Strengths
+- Clear, approachable UI with logical grouping (Personal Info, Loans, Strategy, Analysis)
+- Immediate vs long‑term tradeoff presentation
+- Added behavioral feature (redirect freed payments to Roth) increases practical relevance
+- Modular-ish calculations inside a single file; understandable for a small static tool
+
+## Key Issues Identified & Resolved
+| # | Area | Issue | Resolution |
+|---|------|-------|------------|
+| 1 | Tax Calculation | Off‑by‑one and non-progressive application; no min boundary logic | Rewrote progressive tax function using bracket mins & caps |
+| 2 | Interest / Months | Closed-form formula produced fractional months & occasional negative implied interest | Added precise amortization simulation (month loop) |
+| 3 | Over-allocation | Loan payoff sliders could exceed after‑tax cash; remaining cash used pre‑tax | Enforced cap tied to after‑tax withdrawal; auto-adjust last slider |
+| 4 | Roth Redirect Behavior | Allowed redirect of payments even if loan only partially reduced | Now only payments from fully paid-off loans count as “freed” |
+| 5 | Future Value Horizon | Hard-coded 10-year projection | Added selectable horizon (5,10,15 years) |
+| 6 | Net Wealth Sign Consistency | Mixed expressions used for sign prefix vs value | Centralized expressions (immediateImpact, netWealthImpact) |
+| 7 | Edge Case – Zero Return | Division by zero risk in annuity FV formula | Added zero-rate branch (linear accumulation) |
+| 8 | UX Clarity | "Future Value Lost" ambiguous; assumptions implicit | Renamed to "Foregone Growth"; added assumptions block |
+| 9 | Debug Noise | Verbose console logging | Removed routine logs; warnings only for negative amortization |
+
+## Assumptions (Now Explicit In-App)
+- Age ≥ 59½ (no early withdrawal penalty)
+- Federal tax only (no state/local; no deductions modeled)
+- Lump-sum would remain fully invested at stated annual return
+- Constant monthly loan payment; no recast after lump prepayment
+- Roth contribution redirection limited to fully retired loans
+- Lump sum compounds annually; Roth contributions compound monthly
+- Amortization stops once balance ≤ 0; payments precise to final month
+
+## Core Formulas
+1. Progressive Federal Tax (simplified):  
+   For each bracket: `tax += max(0, min(income, bracket.max) - bracket.min) * rate` until income ≤ bracket.max.
+2. Amortization (loop):  
+   Monthly: `interestPortion = bal * r`; `principalPortion = payment - interestPortion`; update.
+3. Lump Withdrawal Opportunity Cost:  
+   `foregoneGrowth = withdrawal * (1 + annualReturn)^years`.
+4. Roth Future Value (monthly contributions):  
+   If r>0: `PMT * ((1 + r)^n - 1) / r`; else `PMT * n`.
+5. Immediate Impact:  
+   `interestSaved - additionalTax`.
+6. Net Multi-Year Impact:  
+   `interestSaved - additionalTax - foregoneGrowth + rothFutureValue` (if redirect enabled).
+
+## Remaining Potential Enhancements (Not Yet Implemented)
+- Model standard deduction & optional inclusion toggle
+- Allow user-entered state tax rate
+- Provide per-loan detail breakdown (months saved, interest saved) in an expandable panel
+- Include penalty option (checkbox) for under-59½ modeling (10% additional tax)
+- Sensitivity slider: return range ± (e.g., 5%–9%) output as band
+- Option to recast loan payment after lump sum (lower payment vs shorter term scenario)
+- Accessibility pass (ARIA labels, contrast adjustments)
+- Unit test harness (e.g., small JS test file run via Node) for financial functions
+
+## Validation Spot Checks
+Example Scenario: Balance 19,000 @ 8.5%, Payment 350
+- Simulation months align with positive total interest (no negative artifacts)
+- Negative amortization guard triggers only if payment ≤ interest portion
+- After-tax cap prevents allocating > after-tax cash toward loans
+- Roth FV matches external financial calculator within rounding tolerance (<0.2%)
+
+## File Changes Summary
+- `index.html`: Refactored tax logic, added amortization function, slider constraints, horizon selector, assumptions block, sign normalization, and logic cleanup.
+- Added: `GptReview1.md` (this document).
+
+## Risk / Edge Case Notes
+- Infinite months return for negative amortization is handled (excludes from savings). Could optionally surface explicit user warning in UI.
+- Very large projection horizons (>40 years) not supported in selector; could add custom input with validation.
+- Floating point rounding may cause minor cents-level differences; acceptable for planning tool.
+
+## Recommendation
+Current version is materially more accurate and transparent for educational planning. Next highest ROI additions would be: (1) deduction & penalty toggles, (2) per-loan breakdown UI, (3) test harness for regression confidence.
+
+---
+Generated by GPT code review assistance – session 1.
