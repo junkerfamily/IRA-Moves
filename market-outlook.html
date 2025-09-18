@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Outlook Feature - Retirement Fund Loan Payoff Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        
+        h3 {
+            color: #2c3e50;
+            margin-top: 25px;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .highlight {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .problem {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .example {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .example-header {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+        
+        .calculation {
+            background: #f8f9ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .benefit {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            font-weight: 600;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        
+        .nav-links {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .nav-links a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        
+        .nav-links a:hover {
+            background: #2980b9;
+        }
+        
+        .nav-links a.secondary {
+            background: #95a5a6;
+        }
+        
+        .nav-links a.secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .historical-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .history-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .history-card h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .checkmark {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .crossmark {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .comparison-item {
+            padding: 15px;
+            border-radius: 6px;
+        }
+        
+        .standard {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .market-aware {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+        }
+        
+        ul {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        code {
+            background: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        blockquote {
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            font-style: italic;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 Market Outlook Feature</h1>
+        <p class="subtitle">Advanced market correction modeling for realistic opportunity cost analysis</p>
+        
+        <div class="info">
+            <strong>🎯 Core Purpose:</strong> The Market Outlook feature addresses a critical gap in traditional loan payoff analysis by modeling realistic market volatility, corrections, and recovery cycles instead of assuming perfect, uninterrupted growth.
+        </div>
+        
+        <h2>❌ The Problem with Standard Analysis</h2>
+        <div class="problem">
+            <p><strong>Traditional loan payoff calculators use this overly simplistic formula:</strong></p>
+            <div class="calculation">
+Foregone Growth = Withdrawal × (1 + ExpectedReturn)^Years
+            </div>
+            
+            <p><strong>This assumes:</strong></p>
+            <ul>
+                <li><span class="crossmark">❌</span> Steady, uninterrupted growth</li>
+                <li><span class="crossmark">❌</span> No market corrections or volatility</li>
+                <li><span class="crossmark">❌</span> Perfect timing doesn't matter</li>
+            </ul>
+            
+            <p><strong>Reality Check:</strong> Markets don't work this way! 📉📈</p>
+        </div>
+        
+        <h2>🌊 Real-World Market Behavior</h2>
+        <div class="section">
+            <p>Markets experience regular correction cycles that dramatically affect opportunity cost calculations:</p>
+            <ul>
+                <li><strong>Minor Corrections:</strong> 10-15% drops (every 1-2 years)</li>
+                <li><strong>Major Corrections:</strong> 20-30% drops (every 3-5 years)</li>
+                <li><strong>Bear Markets:</strong> 40-50% drops (every 7-10 years)</li>
+                <li><strong>Recovery Periods:</strong> 1-7 years to reach new highs</li>
+            </ul>
+        </div>
+        
+        <h2>⚙️ How Market Timing Analysis Works</h2>
+        
+        <div class="comparison">
+            <div class="comparison-item standard">
+                <h3>📊 Standard Calculation</h3>
+                <div class="calculation">
+$50,000 withdrawal @ 7% annual return over 10 years:
+$50,000 × (1.07)^10 = $98,358 in foregone growth
+                </div>
+            </div>
+            
+            <div class="comparison-item market-aware">
+                <h3>📉 Market Correction Scenario</h3>
+                <p><strong>30% correction, 3-year recovery:</strong></p>
+                <div class="calculation">
+Year 1: Market drops 30% → $50K becomes $35K
+Years 2-4: Recovery to $50K over 3 years
+Years 5-10: Normal 7% growth → $75,073
+                </div>
+            </div>
+        </div>
+        
+        <div class="benefit">
+            Market Timing Benefit: $98,358 - $75,073 = +$23,285
+        </div>
+        
+        <div class="highlight">
+            <strong>💡 Key Insight:</strong> By withdrawing <em>before</em> the correction, you avoid the market loss but also miss some recovery growth. The net effect often favors the guaranteed return of loan payoff over uncertain market gains.
+        </div>
+        
+        <h2>📚 Historical Examples</h2>
+        <div class="historical-examples">
+            <div class="history-card">
+                <h4>💻 2000 Dot-Com Bubble</h4>
+                <ul>
+                    <li><strong>Correction:</strong> 50% drop (NASDAQ)</li>
+                    <li><strong>Recovery:</strong> 7+ years to new highs</li>
+                    <li><strong>Benefit:</strong> Massive advantage for defensive strategies</li>
+                </ul>
+            </div>
+            
+            <div class="history-card">
+                <h4>🏠 2008 Financial Crisis</h4>
+                <ul>
+                    <li><strong>Correction:</strong> 40% drop (S&P 500)</li>
+                    <li><strong>Recovery:</strong> 5+ years to new highs</li>
+                    <li><strong>Benefit:</strong> Significant advantage for debt reduction</li>
+                </ul>
+            </div>
+            
+            <div class="history-card">
+                <h4>🦠 2020 COVID Crash</h4>
+                <ul>
+                    <li><strong>Correction:</strong> 35% drop (March 2020)</li>
+                    <li><strong>Recovery:</strong> 6 months to new highs</li>
+                    <li><strong>Benefit:</strong> Short window but substantial impact</li>
+                </ul>
+            </div>
+        </div>
+        
+        <h2>🎯 When This Feature Is Most Valuable</h2>
+        
+        <div class="highlight">
+            <h3>🚨 Market Conditions Favoring Loan Payoff</h3>
+            <ul>
+                <li><strong>High valuations</strong> - P/E ratios above historical norms</li>
+                <li><strong>Economic uncertainty</strong> - inflation, interest rate volatility</li>
+                <li><strong>Geopolitical tensions</strong> affecting market stability</li>
+                <li><strong>Personal risk changes</strong> - approaching retirement, lower risk tolerance</li>
+            </ul>
+        </div>
+        
+        <h2>🛠️ Calculator Implementation</h2>
+        <div class="section">
+            <h3>User Controls</h3>
+            <ul>
+                <li><strong>Market Correction %:</strong> Expected severity (default: 30%)</li>
+                <li><strong>Recovery Time:</strong> Years to return to pre-correction levels (default: 3 years)</li>
+                <li><strong>Enable/Disable Toggle:</strong> Compare standard vs. market-adjusted scenarios</li>
+            </ul>
+            
+            <h3>Mathematical Model</h3>
+            <div class="calculation">
+// Market correction scenario calculation
+let marketValue = withdrawal;
+
+// Apply correction in year 1 (worst case)
+marketValue *= (1 - correctionPct);
+
+// Recovery: gradual return to pre-correction level
+const recoveryRate = Math.pow(1 / (1 - correctionPct), 1 / recoveryYears) - 1;
+marketValue *= Math.pow(1 + recoveryRate, recoveryYears);
+
+// Post-recovery growth at normal expected return
+marketValue *= Math.pow(1 + expectedReturn, postRecoveryYears);
+            </div>
+        </div>
+        
+        <h2>🎭 Practical Use Cases</h2>
+        
+        <div class="example">
+            <div class="example-header">👴 Scenario 1: Pre-Retiree (Age 55)</div>
+            <p><em>"I'm 10 years from retirement and the market feels overvalued"</em></p>
+            
+            <p><strong>Inputs:</strong></p>
+            <ul>
+                <li>40% correction expected, 4-year recovery</li>
+                <li>$75K loan at 5% interest vs. 7% expected returns</li>
+            </ul>
+            
+            <p><strong>Results:</strong></p>
+            <ul>
+                <li><strong>Without Market Timing:</strong> Loan payoff looks marginally attractive</li>
+                <li><strong>With Market Timing:</strong> Loan payoff becomes clearly beneficial</li>
+            </ul>
+        </div>
+        
+        <div class="example">
+            <div class="example-header">📈 Scenario 2: Economic Uncertainty</div>
+            <p><em>"Inflation is high, Fed is hiking rates, recession fears are growing"</em></p>
+            
+            <p><strong>Inputs:</strong></p>
+            <ul>
+                <li>25% correction expected, 2-year recovery</li>
+                <li>$30K car loan at 6.5% vs. uncertain market returns</li>
+            </ul>
+            
+            <p><strong>Result:</strong> Market timing analysis shows loan payoff as an effective defensive strategy</p>
+        </div>
+        
+        <div class="example">
+            <div class="example-header">🛡️ Scenario 3: Risk Management</div>
+            <p><em>"I can't handle another 2008-style crash in my portfolio"</em></p>
+            
+            <p><strong>Inputs:</strong></p>
+            <ul>
+                <li>35% correction expected, 5-year recovery</li>
+                <li>Multiple loans totaling $50K at various rates</li>
+            </ul>
+            
+            <p><strong>Result:</strong> Demonstrates how loan payoff provides guaranteed returns during uncertain times</p>
+        </div>
+        
+        <h2>🎓 Educational Value</h2>
+        <div class="info">
+            <h3>Key Lessons for Users</h3>
+            <ul>
+                <li><strong>Market timing is difficult</strong> - even professionals struggle with predictions</li>
+                <li><strong>Diversification matters</strong> - loan payoff is one component of risk management</li>
+                <li><strong>Guaranteed returns have value</strong> - avoiding loan interest is risk-free</li>
+                <li><strong>Personal factors matter</strong> - risk tolerance, time horizon, financial goals</li>
+            </ul>
+            
+            <h3>Appropriate Risk Disclosures</h3>
+            <div class="warning">
+                <ul>
+                    <li>Market timing predictions are highly speculative</li>
+                    <li>Past performance doesn't guarantee future results</li>
+                    <li>Professional financial advice is recommended for major decisions</li>
+                    <li>Multiple scenarios and sensitivity analysis should be considered</li>
+                </ul>
+            </div>
+        </div>
+        
+        <h2>🔧 Technical Benefits</h2>
+        <div class="features">
+            <div class="feature-item">
+                <h4>📊 Enhanced Analysis</h4>
+                <p>Side-by-side comparison of optimistic vs. realistic scenarios</p>
+            </div>
+            
+            <div class="feature-item">
+                <h4>🔍 Transparency</h4>
+                <p>Clear assumptions and calculation methodology</p>
+            </div>
+            
+            <div class="feature-item">
+                <h4>⚙️ Flexibility</h4>
+                <p>Adjustable correction severity and recovery timeframes</p>
+            </div>
+            
+            <div class="feature-item">
+                <h4>🎯 Integration</h4>
+                <p>Works with Roth analysis, tax optimization, and scenario management</p>
+            </div>
+        </div>
+        
+        <h2>🎯 Bottom Line</h2>
+        <div class="highlight">
+            <p>The Market Outlook feature transforms the loan payoff calculator from a simple mathematical tool into a sophisticated risk management platform. It acknowledges that investment decisions aren't made in a vacuum - they're made in the context of market conditions, personal circumstances, and economic uncertainty.</p>
+            
+            <p><strong>This feature helps users make more informed decisions by modeling realistic market scenarios rather than assuming perfect, uninterrupted growth.</strong></p>
+        </div>
+        
+        <blockquote>
+            <p><em>"The market can remain irrational longer than you can remain solvent."</em> - John Maynard Keynes</p>
+            <p><strong>But sometimes, taking guaranteed returns (loan payoff) over uncertain market gains is the rational choice.</strong></p>
+        </blockquote>
+        
+        <div class="nav-links">
+            <a href="index.html">Try the Calculator</a>
+            <a href="docs.html" class="secondary">Back to Docs</a>
+        </div>
+    </div>
+</body>
+</html>

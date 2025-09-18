@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Calculations Explained - Retirement Fund Loan Payoff Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        
+        h3 {
+            color: #2c3e50;
+            margin-top: 25px;
+        }
+        
+        .section {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .highlight {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .example {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .nav-links {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .nav-links a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        
+        .nav-links a:hover {
+            background: #2980b9;
+        }
+        
+        .nav-links a.secondary {
+            background: #95a5a6;
+        }
+        
+        .nav-links a.secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        ul {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        code {
+            background: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .formula {
+            background: #f8f9ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .metadata {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 30px 0;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧮 Tax Calculations Explained</h1>
+        <p class="subtitle">Deep dive into how the calculator handles federal tax brackets, deductions, and tax optimization</p>
+        
+        <div class="metadata">
+            <strong>📅 Last Updated:</strong> September 18, 2025 | 
+            <strong>📄 Source:</strong> index.html | 
+            <strong>🔢 Tax Year:</strong> 2024 brackets and deductions
+        </div>
+        
+        <div class="warning">
+            <strong>⚠️ Important:</strong> This calculator provides educational estimates only. It doesn't include tax credits, AMT, QBI deduction, phase-outs, Social Security taxation, ACA premium impacts, or other complex tax interactions. Always consult official IRS guidance or a tax professional.
+        </div>
+        
+        <h2>🎯 What This Models</h2>
+        <div class="section">
+            <p>The calculator estimates the change in federal income tax from a retirement withdrawal by:</p>
+            <ul>
+                <li><strong>Computing taxable income</strong> before vs after the withdrawal</li>
+                <li><strong>Applying 2024 progressive tax brackets</strong> for your selected filing status</li>
+                <li><strong>Including state income tax</strong> as a flat rate applied to the full withdrawal</li>
+                <li><strong>Modeling early withdrawal penalty</strong> (10%) separately if enabled</li>
+                <li><strong>Accounting for deduction shielding</strong> to show how much of your withdrawal avoids federal tax</li>
+            </ul>
+        </div>
+        
+        <h2>📊 Standard Deduction Amounts (2024)</h2>
+        <p>The calculator uses these approximate 2024 standard deduction amounts for educational purposes:</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Filing Status</th>
+                    <th>Base Amount</th>
+                    <th>Age 65+ Add-on</th>
+                    <th>Maximum (Both Spouses 65+)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Single</td>
+                    <td>$14,600</td>
+                    <td>$1,900</td>
+                    <td>$16,500</td>
+                </tr>
+                <tr>
+                    <td>Married Filing Jointly</td>
+                    <td>$29,200</td>
+                    <td>$1,500 per spouse</td>
+                    <td>$32,200</td>
+                </tr>
+                <tr>
+                    <td>Head of Household</td>
+                    <td>$21,900</td>
+                    <td>$1,900</td>
+                    <td>$23,800</td>
+                </tr>
+                <tr>
+                    <td>Married Filing Separately</td>
+                    <td>$14,600</td>
+                    <td>$1,500</td>
+                    <td>$16,100</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="info">
+            <strong>💡 Age Clarification:</strong> The "Age 65+?" dropdown in the UI affects only the standard deduction calculation. It does NOT control the early withdrawal penalty - that's handled by a separate checkbox for being under age 59½.
+        </div>
+        
+        <h2>⚙️ How Deduction Logic Works</h2>
+        <div class="section">
+            <p>The calculator determines which deduction to use based on your inputs:</p>
+            
+            <h3>Input Variables:</h3>
+            <ul>
+                <li><strong>G</strong> = Gross income (pre-withdrawal)</li>
+                <li><strong>W</strong> = Withdrawal amount</li>
+                <li><strong>F</strong> = Filing status</li>
+                <li><strong>S</strong> = "Apply Standard Deduction" checkbox</li>
+                <li><strong>I</strong> = Itemized deduction input (if any)</li>
+                <li><strong>A</strong> = Age 65+ selection</li>
+            </ul>
+            
+            <h3>Deduction Selection Process:</h3>
+            <div class="formula">
+                If S is checked:
+                  If I > 0, use I (itemized overrides standard)
+                  Else, use D_std (standard deduction)
+                If S is unchecked:
+                  If I > 0, use I (itemized only)
+                  Else, use 0 (treat income as already taxable)
+            </div>
+            
+            <h3>Taxable Income Calculation:</h3>
+            <div class="formula">
+                Taxable_before = max(0, G - Deduction_used)
+                Taxable_after = max(0, (G + W) - Deduction_used)
+            </div>
+        </div>
+        
+        <h2>🛡️ Deduction Shield Analysis</h2>
+        <div class="highlight">
+            <p>One of the calculator's most valuable features is showing how much of your withdrawal is effectively "shielded" from federal tax by unused deduction capacity:</p>
+            
+            <div class="formula">
+                Incremental_taxable = Taxable_after - Taxable_before
+                Shielded_amount = max(0, W - Incremental_taxable)
+            </div>
+            
+            <p><strong>Why this matters:</strong> Your effective tax rate on the withdrawal can be much lower than your marginal tax bracket when some (or all) of the withdrawal falls under unused deduction space.</p>
+        </div>
+        
+        <h2>💔 Early Withdrawal Penalty</h2>
+        <div class="section">
+            <ul>
+                <li>If you enable the <strong>"Apply 10% Early Withdrawal Penalty"</strong> toggle, a penalty of 10% × W is added</li>
+                <li>This penalty is <strong>independent</strong> of deductions and state tax calculations</li>
+                <li>If you are 59½ or older, leave this toggle off</li>
+                <li>The Age 65+ selection does <strong>NOT</strong> control the penalty - only the standard deduction</li>
+            </ul>
+        </div>
+        
+        <h2>📝 Worked Examples</h2>
+        
+        <div class="example">
+<strong>Example 1: Full Taxation</strong>
+Single filer, $60,000 gross income, $10,000 withdrawal, standard deduction, under 65
+
+• Standard deduction = $14,600
+• Taxable before = max(0, $60,000 - $14,600) = $45,400
+• Taxable after = max(0, $70,000 - $14,600) = $55,400
+• Incremental taxable = $55,400 - $45,400 = $10,000
+• Shielded amount = max(0, $10,000 - $10,000) = $0
+• Result: Entire withdrawal is federally taxable
+        </div>
+        
+        <div class="example">
+<strong>Example 2: Complete Shielding</strong>
+Married filing jointly, $20,000 gross income, $10,000 withdrawal, 
+standard deduction, both spouses 65+
+
+• Standard deduction = $29,200 + (2 × $1,500) = $32,200
+• Taxable before = max(0, $20,000 - $32,200) = $0
+• Taxable after = max(0, $30,000 - $32,200) = $0
+• Incremental taxable = $0 - $0 = $0
+• Shielded amount = max(0, $10,000 - $0) = $10,000
+• Result: Entire withdrawal shielded from federal tax!
+        </div>
+        
+        <h2>💡 UI Tips & Best Practices</h2>
+        <div class="section">
+            <ul>
+                <li><strong>"Apply Standard Deduction":</strong> Check this when you want the tool to compute taxable income from gross income. Uncheck if your input income is already taxable (or you want to model zero deduction)</li>
+                <li><strong>Itemized Override:</strong> Enter an itemized deduction amount to override the standard deduction calculation</li>
+                <li><strong>"Age 65+?":</strong> Use this only to get the additional standard deduction. It doesn't affect the early withdrawal penalty</li>
+                <li><strong>Penalty Checkbox:</strong> Use this to model being under age 59½ for traditional retirement accounts</li>
+            </ul>
+        </div>
+        
+        <h2>🔧 Technical Implementation</h2>
+        <div class="info">
+            <p><strong>Where this lives in the code:</strong></p>
+            <ul>
+                <li><strong>Deduction logic:</strong> <code>computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode)</code></li>
+                <li><strong>Federal tax calculation:</strong> <code>calculateTax(taxable, filingStatus)</code> with 2024 brackets</li>
+                <li><strong>Shield calculation:</strong> <code>shieldPortion = max(0, withdrawal - incrementalTaxable)</code></li>
+                <li><strong>Penalty toggle:</strong> <code>#earlyPenaltyCheck</code> adds 10% × withdrawal</li>
+            </ul>
+        </div>
+        
+        <h2>⚠️ Limitations to Remember</h2>
+        <div class="warning">
+            <ul>
+                <li><strong>Educational estimates only</strong> - not tax advice</li>
+                <li><strong>Simplified state tax</strong> - modeled as flat rate on full withdrawal</li>
+                <li><strong>Missing complexities:</strong> No credits, AMT, QBI, phase-outs, Social Security taxation, ACA impacts, SALT cap behaviors, or dependent considerations</li>
+                <li><strong>Approximate values:</strong> 2024 amounts may change - always check current IRS guidance</li>
+            </ul>
+        </div>
+        
+        <div class="nav-links">
+            <a href="index.html">Try the Calculator</a>
+            <a href="docs.html" class="secondary">Back to Docs</a>
+        </div>
+    </div>
+</body>
+</html>
