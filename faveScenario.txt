@@ -1,0 +1,21 @@
+gross income 150,000
+Fileing status marrried filing jointly
+500,000 available for withdraw
+expected return 7%
+state income tax 0.
+
+age 65 no.
+penalty no.
+
+loan:
+Van
+Rate 6.99%
+Balance 17975
+monthly payment: 358
+
+withdraw what is needed to payoff the loan
+
+pay towards loan 17975
+
+monthly amount to Roth -- 360 (full)
+Only redirect for remaining term of loan

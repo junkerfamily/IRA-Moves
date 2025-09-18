@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retirement Fund Loan Payoff Calculator</title>
+    <title>DJ's Retirement Fund Loan Payoff Calculator</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -194,6 +194,7 @@
             border-radius: 5px;
             padding: 15px;
             margin: 15px 0;
+            color: #333;
         }
         
         .warning {
@@ -250,6 +251,10 @@
         .results-divider {border-color: rgba(255,255,255,0.3);}
         .m-0 {margin:0;}
         .assumptions-note {margin-top:6px; font-size:0.85em; opacity:0.85;}
+        .calc-explanation {background: rgba(255,255,255,0.15); margin:8px 0; padding:12px; border-radius:6px; font-size:0.9em; line-height:1.4; border-left:3px solid rgba(255,255,255,0.4); display:none;}
+        .calc-explanation.show {display:block;}
+        .calc-link {cursor:pointer; text-decoration:underline; opacity:0.9;}
+        .calc-link:hover {opacity:1; color:#FFE5B4;}
     </style>
 </head>
 <body>
@@ -259,8 +264,16 @@
             <a class="link-docs" href="standard-deduction.html" target="_blank" rel="noopener">Docs</a>
             <a class="link-docs" href="#" onclick="resetApp(); return false;">Reset</a>
             <a class="link-docs" href="#" onclick="loadSampleData(); return false;">Sample Data</a>
+            <a class="link-docs" href="#" onclick="saveScenario(); return false;">Save Scenario</a>
         </div>
         
+        <div id="scenario-loader" class="form-group hidden" style="margin-bottom: 20px;">
+            <label for="scenarioSelect">Load Saved Scenario</label>
+            <select id="scenarioSelect">
+                <option value="">-- Select a Scenario --</option>
+            </select>
+        </div>
+
         <div class="warning">
             <strong>Disclaimer:</strong> This calculator is for educational purposes only. Consult with a financial advisor before making major financial decisions.
         </div>
@@ -269,7 +282,7 @@
             <h2>💼 Income & Tax Inputs</h2>
             <div class="form-group">
                 <label for="taxableIncome">Annual Gross Income ($)</label>
-                <input type="number" id="taxableIncome" placeholder="75000" min="0">
+                <input type="number" id="taxableIncome" min="0">
             </div>
             <div class="form-group">
                 <label for="filingStatus">Filing Status</label>
@@ -281,16 +294,35 @@
                 </select>
             </div>
             <div class="form-group">
+                <label for="accountType">Retirement Account Type</label>
+                <select id="accountType">
+                    <option value="traditional">Traditional 401(k)/403(b) (Pre-tax)</option>
+                    <option value="roth">Roth IRA (After-tax)</option>
+                </select>
+                <small class="panel-note">Traditional accounts are taxed on withdrawal; Roth contributions can be withdrawn tax-free and penalty-free at any time.</small>
+            </div>
+            <div class="form-group">
                 <label for="retirementBalance">Available for Withdrawal ($)</label>
-                <input type="number" id="retirementBalance" placeholder="50000" min="0">
+                <input type="number" id="retirementBalance" min="0">
             </div>
             <div class="form-group">
                 <label for="expectedReturn">Expected Annual Return on Retirement Account (%)</label>
-                <input type="number" id="expectedReturn" placeholder="7" min="0" max="20" step="0.1">
+                <input type="number" id="expectedReturn" min="0" max="20" step="0.1">
+            </div>
+            <div class="form-group">
+                <label for="projectionYears">Projection Time Horizon (Years)</label>
+                <select id="projectionYears">
+                    <option value="5">5 Years</option>
+                    <option value="10" selected>10 Years</option>
+                    <option value="15">15 Years</option>
+                    <option value="20">20 Years</option>
+                    <option value="25">25 Years</option>
+                    <option value="30">30 Years</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="stateTaxRate">State Income Tax Rate (%) <span title="Flat estimate applied to full withdrawal for simplicity">ℹ️</span></label>
-                <input type="number" id="stateTaxRate" placeholder="0" min="0" max="20" step="0.1">
+                <input type="number" id="stateTaxRate" min="0" max="20" step="0.1">
             </div>
             <div class="form-group deduction-panel">
                 <label class="mb-8">Deduction Options</label>
@@ -300,7 +332,7 @@
                     </label>
                     <div class="flex-1-wide">
                         <label for="itemizedDeduction" class="no-bold">Itemized Deduction ($) <small>(overrides standard if > 0)</small></label>
-                        <input type="number" id="itemizedDeduction" placeholder="0" min="0">
+                        <input type="number" id="itemizedDeduction" min="0">
                     </div>
                     <div class="flex-1-mid">
                         <label for="age65Addl" class="no-bold">Age 65+? (Adjust) <span title="Adjusts only the standard deduction amount.">ℹ️</span></label>
@@ -336,13 +368,13 @@
                     <input type="checkbox" id="autoWithdrawCheck" class="mr-6">
                     <strong>Only withdraw what's needed for selected paydowns</strong>
                 </label>
-                <small class="roth-note">Automatically sizes the pre-tax withdrawal to cover loan allocations after tax and penalties. Prevents oversized withdrawals and inflated foregone-growth penalties.</small>
+                <small class="roth-note" id="autoWithdrawNote">Automatically sizes the withdrawal to cover loan allocations after tax and penalties. Prevents oversized withdrawals and inflated foregone-growth penalties.</small>
             </div>
             <div class="form-group penalty-box" id="earlyPenaltyContainer">
                 <label class="inline-flex">
-                    <input type="checkbox" id="earlyPenaltyCheck"> <strong>Apply 10% Early Withdrawal Penalty (Under age 59½)</strong> <span title="If you are 59½ or older, leave this off.">ℹ️</span>
+                    <input type="checkbox" id="earlyPenaltyCheck"> <strong id="penaltyLabel">Apply 10% Early Withdrawal Penalty (Under age 59½)</strong> <span title="If you are 59½ or older, leave this off.">ℹ️</span>
                 </label>
-                <small>Adds a 10% penalty on the withdrawal (in addition to income tax) and reduces after-tax cash available.</small>
+                <small id="penaltyDescription">Adds a 10% penalty on the withdrawal (in addition to income tax) and reduces after-tax cash available.</small>
             </div>
             
             <div id="loanSliders"></div>
@@ -428,7 +460,7 @@
         let loans = [];
         let loanCounter = 0;
         
-        function addLoan() {
+        function addLoan(preventFocus = false) {
             const loanId = 'loan_' + loanCounter++;
             const loanDiv = document.createElement('div');
             loanDiv.className = 'loan-item';
@@ -444,25 +476,27 @@
                     </div>
                     <div class="form-group">
                         <label>Interest Rate (%)</label>
-                        <input type="number" id="${loanId}_rate" placeholder="5.5" min="0" max="50" step="0.1">
+                        <input type="number" id="${loanId}_rate" min="0" max="50" step="0.1">
                     </div>
                     <div class="form-group">
                         <label>Current Balance ($)</label>
-                        <input type="number" id="${loanId}_balance" placeholder="15000" min="0">
+                        <input type="number" id="${loanId}_balance" min="0">
                     </div>
                     <div class="form-group">
                         <label>Monthly Payment ($)</label>
-                        <input type="number" id="${loanId}_payment" placeholder="350" min="0">
+                        <input type="number" id="${loanId}_payment" min="0">
                     </div>
                 </div>
             `;
             loanDiv.id = loanId;
             
             document.getElementById('loansList').appendChild(loanDiv);
-            // Bring the newly added loan into view and focus the first field
-            try { loanDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_) {}
-            const firstInput = document.getElementById(`${loanId}_purpose`);
-            if (firstInput) firstInput.focus();
+            // Bring the newly added loan into view and focus the first field, unless prevented
+            if (!preventFocus) {
+                try { loanDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_) {}
+                const firstInput = document.getElementById(`${loanId}_purpose`);
+                if (firstInput) firstInput.focus();
+            }
             loans.push(loanId);
             
             // Add event listeners
@@ -623,8 +657,8 @@
                 const sliderDiv = document.createElement('div');
                 sliderDiv.className = 'slider-container';
                 sliderDiv.innerHTML = `
-                    <label>Pay towards ${purpose}: $<span id="${loanId}_paymentAmount">${balance.toLocaleString()}</span></label>
-                    <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="${balance}" step="10">
+                    <label>Pay towards ${purpose}: $<span id="${loanId}_paymentAmount">${balance.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></label>
+                    <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="${balance}" step="1">
                 `;
                 slidersDiv.appendChild(sliderDiv);
                 
@@ -643,6 +677,7 @@
     function calculateResults() {
             const grossIncome = parseFloat(document.getElementById('taxableIncome').value) || 0;
             const filingStatus = document.getElementById('filingStatus').value;
+            const accountType = document.getElementById('accountType').value;
             const retirementBalance = parseFloat(document.getElementById('retirementBalance').value) || 0;
             const expectedReturn = parseFloat(document.getElementById('expectedReturn').value) / 100 || 0.07;
             let withdrawal = parseFloat(document.getElementById('withdrawalSlider').value) || 0;
@@ -658,9 +693,7 @@
             const age65Mode = document.getElementById('age65Addl').value;
             const stateTaxRate = (parseFloat(document.getElementById('stateTaxRate').value) || 0)/100;
 
-            document.getElementById('withdrawalAmount').textContent = withdrawal.toLocaleString();
-
-            // Sum chosen lump-sum allocations to loans (payment sliders represent lump sums)
+                document.getElementById('withdrawalAmount').textContent = withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0});            // Sum chosen lump-sum allocations to loans (payment sliders represent lump sums)
             let totalLoanPayments = 0;
             loans.forEach(loanId => {
                 const slider = document.getElementById(`${loanId}_paymentSlider`);
@@ -668,7 +701,7 @@
                     const val = parseFloat(slider.value) || 0;
                     totalLoanPayments += val;
                     const amtSpan = document.getElementById(`${loanId}_paymentAmount`);
-                    if (amtSpan) amtSpan.textContent = val.toLocaleString();
+                    if (amtSpan) amtSpan.textContent = val.toLocaleString('en-US', {maximumFractionDigits: 0});
                 }
             });
 
@@ -677,45 +710,75 @@
             if (autoWithdraw) {
                 const targetAfterTax = totalLoanPayments;
                 const maxW = retirementBalance;
-                const tol = 0.01;
-                let lo = 0, hi = maxW, best = 0;
-                const afterTaxFor = (w) => {
-                    const base = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
-                    const aft = computeTaxable(grossIncome + w, filingStatus, applyStd, itemizedValue, age65Mode);
-                    const currTax = calculateTax(base.taxable, filingStatus);
-                    const newTaxV = calculateTax(aft.taxable, filingStatus);
-                    const addFed = newTaxV - currTax;
-                    const addState = w * stateTaxRate;
-                    const penalty = (document.getElementById('earlyPenaltyCheck')?.checked) ? w * 0.10 : 0;
-                    return w - (addFed + addState) - penalty;
-                };
-                for (let i = 0; i < 40; i++) {
-                    const mid = (lo + hi) / 2;
-                    const aft = afterTaxFor(mid);
-                    if (aft >= targetAfterTax) { best = mid; hi = mid; } else { lo = mid; }
-                    if (hi - lo < tol) break;
+                
+                if (accountType === 'roth') {
+                    // Roth: no taxes/penalties, so withdrawal = target amount
+                    withdrawal = Math.min(targetAfterTax, retirementBalance);
+                } else {
+                    // Traditional: need to solve for withdrawal that yields target after taxes/penalties
+                    const tol = 0.01;
+                    let lo = 0, hi = maxW, best = 0;
+                    const afterTaxFor = (w) => {
+                        const base = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
+                        const aft = computeTaxable(grossIncome + w, filingStatus, applyStd, itemizedValue, age65Mode);
+                        const currTax = calculateTax(base.taxable, filingStatus);
+                        const newTaxV = calculateTax(aft.taxable, filingStatus);
+                        const addFed = newTaxV - currTax;
+                        const addState = w * stateTaxRate;
+                        const penalty = (document.getElementById('earlyPenaltyCheck')?.checked) ? w * 0.10 : 0;
+                        return w - (addFed + addState) - penalty;
+                    };
+                    for (let i = 0; i < 40; i++) {
+                        const mid = (lo + hi) / 2;
+                        const aft = afterTaxFor(mid);
+                        if (aft >= targetAfterTax) { best = mid; hi = mid; } else { lo = mid; }
+                        if (hi - lo < tol) break;
+                    }
+                    withdrawal = Math.min(best, retirementBalance);
                 }
-                withdrawal = Math.min(best, retirementBalance);
+                
                 // Reflect in UI
                 const wSlider = document.getElementById('withdrawalSlider');
                 if (wSlider) wSlider.value = withdrawal;
-                document.getElementById('withdrawalAmount').textContent = withdrawal.toLocaleString();
+                document.getElementById('withdrawalAmount').textContent = withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0});
             }
 
-            // Taxable income modeling
-            const baseTaxable = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
-            const afterTaxable = computeTaxable(grossIncome + withdrawal, filingStatus, applyStd, itemizedValue, age65Mode);
-            const currentTax = calculateTax(baseTaxable.taxable, filingStatus);
-            const newTax = calculateTax(afterTaxable.taxable, filingStatus);
-            const additionalTaxFederal = newTax - currentTax;
-            const additionalTaxState = withdrawal * stateTaxRate; // flat model on full withdrawal
-            const additionalTax = additionalTaxFederal + additionalTaxState;
-            const incrementalTaxable = afterTaxable.taxable - baseTaxable.taxable;
-            const shieldPortion = Math.max(0, withdrawal - incrementalTaxable);
+            // Tax and penalty calculations (conditional based on account type)
+            let additionalTaxFederal = 0;
+            let additionalTaxState = 0; 
+            let additionalTax = 0;
+            let incrementalTaxable = 0;
+            let shieldPortion = 0;
+            let earlyPenalty = 0;
+            let baseTaxable = { deductionUsed: 0, taxable: 0 };
+            let afterTaxable = { deductionUsed: 0, taxable: 0 };
 
-            // Early withdrawal penalty
-            const earlyPenaltyEnabled = document.getElementById('earlyPenaltyCheck')?.checked;
-            const earlyPenalty = earlyPenaltyEnabled ? withdrawal * 0.10 : 0;
+            if (accountType === 'traditional') {
+                // Traditional account: full tax treatment
+                baseTaxable = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
+                afterTaxable = computeTaxable(grossIncome + withdrawal, filingStatus, applyStd, itemizedValue, age65Mode);
+                const currentTax = calculateTax(baseTaxable.taxable, filingStatus);
+                const newTax = calculateTax(afterTaxable.taxable, filingStatus);
+                additionalTaxFederal = newTax - currentTax;
+                additionalTaxState = withdrawal * stateTaxRate; // flat model on full withdrawal
+                additionalTax = additionalTaxFederal + additionalTaxState;
+                incrementalTaxable = afterTaxable.taxable - baseTaxable.taxable;
+                shieldPortion = Math.max(0, withdrawal - incrementalTaxable);
+
+                // Early withdrawal penalty (traditional accounts)
+                const earlyPenaltyEnabled = document.getElementById('earlyPenaltyCheck')?.checked;
+                earlyPenalty = earlyPenaltyEnabled ? withdrawal * 0.10 : 0;
+            } else if (accountType === 'roth') {
+                // Roth IRA: no taxes or penalties on contribution withdrawals
+                baseTaxable = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
+                afterTaxable = baseTaxable; // No change to taxable income
+                additionalTaxFederal = 0;
+                additionalTaxState = 0;
+                additionalTax = 0;
+                incrementalTaxable = 0;
+                shieldPortion = 0;
+                earlyPenalty = 0; // No penalties on Roth contribution withdrawals
+            }
 
             // After-tax cash
             const afterTaxWithdrawal = withdrawal - additionalTax - earlyPenalty;
@@ -728,7 +791,7 @@
                     const currentVal = parseFloat(slider.value) || 0;
                     const newVal = Math.max(0, currentVal - overflow);
                     slider.value = newVal;
-                    document.getElementById(`${lastLoanSliderChanged}_paymentAmount`).textContent = parseFloat(newVal).toLocaleString();
+                    document.getElementById(`${lastLoanSliderChanged}_paymentAmount`).textContent = parseFloat(newVal).toLocaleString('en-US', {maximumFractionDigits: 0});
                     // Recompute total
                     totalLoanPayments = 0;
                     loans.forEach(id => {
@@ -739,7 +802,7 @@
             }
 
             const remainingCash = afterTaxWithdrawal - totalLoanPayments;
-            document.getElementById('remainingCash').textContent = remainingCash.toLocaleString();
+            document.getElementById('remainingCash').textContent = remainingCash.toLocaleString('en-US', {maximumFractionDigits: 0});
 
             // Future growth foregone (lump sum left invested)
             const newRetirementBalance = retirementBalance - withdrawal;
@@ -779,7 +842,7 @@
                 }
                 const interestSaved = Math.max(0, originalA.interest - newA.interest);
                 totalInterestSaved += interestSaved;
-                if (newBalance === 0) freedMonthlyPayments += monthlyPayment;
+                if (newBalance < 0.01) freedMonthlyPayments += monthlyPayment; // Use small tolerance for "paid off"
                 loanBreakdown.push({
                     purpose,
                     balance,
@@ -800,8 +863,8 @@
             // Adjust Roth slider max based on freed monthly payments
             const rothSlider = document.getElementById('rothRedirectSlider');
             if (rothSlider) {
-                rothSlider.max = freedMonthlyPayments;
-                if (parseFloat(rothSlider.value) > freedMonthlyPayments) {
+                rothSlider.max = Math.max(freedMonthlyPayments, 1000); // Keep at least 1000 max for usability
+                if (parseFloat(rothSlider.value) > freedMonthlyPayments && freedMonthlyPayments > 0) {
                     rothSlider.value = freedMonthlyPayments;
                 }
                 updateRothDisplay();
@@ -818,9 +881,13 @@
                 const monthlyRate = expectedReturn / 12;
                 const totalHorizonMonths = contribMonths;
                 const remainingTermMode = document.getElementById('rothTermRemaining')?.checked;
+                
+                // Effective monthly contribution (capped by available freed payments)
+                const effectiveMonthlyContrib = Math.min(rothMonthlyAmount, freedMonthlyPayments);
+                
                 if (remainingTermMode) {
                     // Build per-month available redirect based on each fully-paid loan's original schedule
-                    const paidLoans = lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance === 0 && lb.originalMonths > 0);
+                    const paidLoans = lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance < 0.01 && lb.originalMonths > 0);
                     const maxMonths = paidLoans.reduce((m, lb) => Math.max(m, lb.originalMonths || 0), 0);
                     const avail = new Array(maxMonths).fill(0);
                     paidLoans.forEach(lb => {
@@ -829,7 +896,8 @@
                     let fv = 0;
                     let contribSum = 0;
                     for (let m = 0; m < maxMonths; m++) {
-                        const c = Math.min(rothMonthlyAmount, avail[m] || 0);
+                        const monthlyAvailable = avail[m] || 0;
+                        const c = Math.min(effectiveMonthlyContrib, monthlyAvailable);
                         contribSum += c;
                         if (monthlyRate === 0) {
                             fv += c;
@@ -844,11 +912,11 @@
                     rothContributions = contribSum;
                     rothFutureValue = fv;
                 } else {
-                    // Full-horizon constant contribution (capped by freed monthly at month 1 via slider max)
-                    rothContributions = rothMonthlyAmount * totalHorizonMonths;
+                    // Full-horizon constant contribution (capped by actual freed monthly payments)
+                    rothContributions = effectiveMonthlyContrib * totalHorizonMonths;
                     rothFutureValue = monthlyRate === 0
-                        ? rothMonthlyAmount * totalHorizonMonths
-                        : rothMonthlyAmount * (Math.pow(1 + monthlyRate, totalHorizonMonths) - 1) / monthlyRate;
+                        ? effectiveMonthlyContrib * totalHorizonMonths
+                        : effectiveMonthlyContrib * (Math.pow(1 + monthlyRate, totalHorizonMonths) - 1) / monthlyRate;
                 }
             }
 
@@ -882,47 +950,91 @@
             }
             // Defer rendering of these values until after the base metrics block
 
-            mainHtml += `<div class=\"metric\"><span>Retirement Withdrawal:</span><span class=\"metric-value\">$${withdrawal.toLocaleString()}</span></div>`;
-            if (applyStd || itemizedValue>0) mainHtml += `<div class=\"metric\"><span>Deduction Used:</span><span class=\"metric-value\">$${baseTaxable.deductionUsed.toLocaleString()}</span></div>`;
-            mainHtml += `<div class=\"metric\" title=\"Federal bracket-based + flat state tax on full withdrawal\"><span>Total Additional Tax (Fed + State):</span><span class=\"metric-value\">$${additionalTax.toLocaleString()}</span></div>`;
-            if (stateTaxRate>0) mainHtml += `<div class=\"metric\" title=\"Flat state tax estimate on withdrawal\"><span>&nbsp;↳ State Portion (Flat):</span><span class=\"metric-value\">$${additionalTaxState.toLocaleString()}</span></div>`;
-            if (applyStd || itemizedValue>0) mainHtml += `<div class=\"metric\"><span>Withdrawal Shielded by Deduction:</span><span class=\"metric-value\">$${shieldPortion.toLocaleString()}</span></div>`;
-            if (earlyPenaltyEnabled) mainHtml += `<div class=\"metric impact-penalty\"><span>Early Withdrawal Penalty (10%):</span><span class=\"metric-value\">$${earlyPenalty.toLocaleString()}</span></div>`;
-            mainHtml += `<div class=\"metric\"><span>After-Tax Cash Available:</span><span class=\"metric-value\">$${afterTaxWithdrawal.toLocaleString()}</span></div>`;
-            mainHtml += `<div class=\"metric\"><span>Applied to Loans:</span><span class=\"metric-value\">$${totalLoanPayments.toLocaleString()}</span></div>`;
-            mainHtml += `<div class=\"metric\"><span>Remaining Cash:</span><span class=\"metric-value\">$${remainingCash.toLocaleString()}</span></div>`;
-            mainHtml += `<div class=\"metric\"><span>New Retirement Balance:</span><span class=\"metric-value\">$${newRetirementBalance.toLocaleString()}</span></div>`;
+            const accountTypeName = accountType === 'roth' ? 'Roth IRA' : 'Traditional Retirement Account';
+            mainHtml += `<div class=\"metric\"><span>${accountTypeName} Withdrawal:</span><span class=\"metric-value\">$${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            
+            if (accountType === 'traditional') {
+                if (applyStd || itemizedValue>0) mainHtml += `<div class=\"metric\"><span>Deduction Used:</span><span class=\"metric-value\">$${baseTaxable.deductionUsed.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+                mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('taxCalc')\">Total Additional Tax (Fed + State):</span></span><span class=\"metric-value\">$${additionalTax.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+                mainHtml += `<div id=\"taxCalc\" class=\"calc-explanation\">Federal: $${additionalTaxFederal.toLocaleString('en-US', {maximumFractionDigits: 0})} + State: $${additionalTaxState.toLocaleString('en-US', {maximumFractionDigits: 0})} = $${additionalTax.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>Federal calculated using progressive tax brackets on incremental taxable income. State applied as flat rate (${(stateTaxRate*100).toFixed(1)}%) on full withdrawal.</div>`;
+            } else {
+                mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('taxCalc')\">Tax on Roth Withdrawal:</span></span><span class=\"metric-value\">$0</span></div>`;
+                mainHtml += `<div id=\"taxCalc\" class=\"calc-explanation\">Roth IRA contribution withdrawals are always tax-free and penalty-free, regardless of age. This assumes you're withdrawing contributions only, not earnings.</div>`;
+            }
+            if (accountType === 'traditional') {
+                if (stateTaxRate>0) mainHtml += `<div class=\"metric\"><span>&nbsp;↳ State Portion (Flat):</span><span class=\"metric-value\">$${additionalTaxState.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+                if (applyStd || itemizedValue>0) mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('shieldCalc')\">Withdrawal Shielded by Deduction:</span></span><span class=\"metric-value\">$${shieldPortion.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+                if (applyStd || itemizedValue>0) mainHtml += `<div id=\"shieldCalc\" class=\"calc-explanation\">Amount of withdrawal protected from federal taxes by unused deduction capacity. Withdrawal ($${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}) - Additional Taxable Income ($${incrementalTaxable.toLocaleString('en-US', {maximumFractionDigits: 0})}) = $${shieldPortion.toLocaleString('en-US', {maximumFractionDigits: 0})} shielded.<br><br><strong>Bottom Line:</strong> Shielding mainly helps people with very low current income. Most middle-to-upper income earners see little to no shielding because their income already uses up most of their available deductions. <a href=\"ShieldedByDeduction.md\" target=\"_blank\" style=\"color:#FFE5B4;\">See detailed examples →</a></div>`;
+                if (earlyPenalty > 0) mainHtml += `<div class=\"metric impact-penalty\"><span>Early Withdrawal Penalty (10%):</span><span class=\"metric-value\">$${earlyPenalty.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            } else {
+                mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('penaltyCalc')\">Early Withdrawal Penalty:</span></span><span class=\"metric-value\">$0</span></div>`;
+                mainHtml += `<div id=\"penaltyCalc\" class=\"calc-explanation\">Roth IRA contributions can be withdrawn penalty-free at any age. Only earnings withdrawals before age 59½ are subject to penalties.</div>`;
+            }
+            mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('afterTaxCalc')\">Cash Available for Loans:</span></span><span class=\"metric-value\">$${afterTaxWithdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            if (accountType === 'traditional') {
+                mainHtml += `<div id=\"afterTaxCalc\" class=\"calc-explanation\">Gross Withdrawal ($${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}) - Taxes ($${additionalTax.toLocaleString('en-US', {maximumFractionDigits: 0})}) - Penalties ($${earlyPenalty.toLocaleString('en-US', {maximumFractionDigits: 0})}) = $${afterTaxWithdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})} available for loan payments.</div>`;
+            } else {
+                mainHtml += `<div id=\"afterTaxCalc\" class=\"calc-explanation\">Roth Withdrawal ($${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}) - Taxes ($0) - Penalties ($0) = $${afterTaxWithdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})} available for loan payments. Full withdrawal amount is available since Roth contributions are tax-free.</div>`;
+            }
+            mainHtml += `<div class=\"metric\"><span>Applied to Loans:</span><span class=\"metric-value\">$${totalLoanPayments.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            mainHtml += `<div class=\"metric\"><span>Remaining Cash:</span><span class=\"metric-value\">$${remainingCash.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            mainHtml += `<div class=\"metric\"><span>New Retirement Balance:</span><span class=\"metric-value\">$${newRetirementBalance.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
             mainHtml += `<hr style=\"border-color: rgba(255,255,255,0.3);\">`;
-            mainHtml += `<div class=\"metric\"><span>Estimated Interest Saved (lifetime, nominal):</span><span class=\"metric-value\">$${totalInterestSaved.toLocaleString()}</span></div>`;
-            mainHtml += `<div class=\"metric\"><span>Immediate Cash Impact (today, taxes/penalties only):</span><span class=\"metric-value\">$${immediateCashImpact.toLocaleString()}</span></div>`;
+            mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('interestCalc')\">Total Future Interest Avoided:</span></span><span class=\"metric-value\">$${totalInterestSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            mainHtml += `<div id=\"interestCalc\" class=\"calc-explanation\">Sum of interest saved across all loans by applying lump-sum payments. Calculated by comparing original amortization schedules vs. new schedules with reduced principal balances. This represents the total interest you will NOT pay over the remaining life of each loan.</div>`;
             taxesPenalties = additionalTax + earlyPenalty;
-            mainHtml += `<div class=\"metric\"><span>Net Savings vs Taxes (no growth, lifetime):</span><span class=\"metric-value\">${(totalInterestSaved - taxesPenalties) >= 0 ? '+' : ''}$${(totalInterestSaved - taxesPenalties).toLocaleString()}</span></div>`;
-            if (next12InterestAvoided > 0) mainHtml += `<div class=\"metric\"><span>Interest avoided next 12 months:</span><span class=\"metric-value\">$${next12InterestAvoided.toLocaleString()}</span></div>`;
-            if (breakevenMonths != null) mainHtml += `<div class=\"metric\"><span>Breakeven time (no growth):</span><span class=\"metric-value\">${breakevenMonths} month${breakevenMonths===1?'':'s'}</span></div>`;
+            mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('netSavingsCalc')\">Immediate Net Savings (Interest Saved less Taxes):</span></span><span class=\"metric-value\">${(totalInterestSaved - taxesPenalties) >= 0 ? '+' : ''}$${(totalInterestSaved - taxesPenalties).toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            mainHtml += `<div id=\"netSavingsCalc\" class=\"calc-explanation\">Simple comparison: Interest Saved ($${totalInterestSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}) - Taxes & Penalties ($${taxesPenalties.toLocaleString('en-US', {maximumFractionDigits: 0})}) = ${(totalInterestSaved - taxesPenalties) >= 0 ? 'Net Benefit' : 'Net Cost'} of $${Math.abs(totalInterestSaved - taxesPenalties).toLocaleString('en-US', {maximumFractionDigits: 0})}. This ignores opportunity cost of withdrawn funds.</div>`;
+            if (next12InterestAvoided > 0) mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('next12Calc')\">Interest avoided next 12 months:</span></span><span class=\"metric-value\">$${next12InterestAvoided.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            if (next12InterestAvoided > 0) mainHtml += `<div id=\"next12Calc\" class=\"calc-explanation\">Interest you will avoid paying in the next 12 months due to the lump-sum payments. Calculated by comparing month-by-month interest charges on original vs. new loan balances.</div>`;
+            if (breakevenMonths != null) mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('breakevenCalc')\">Breakeven time (no growth):</span></span><span class=\"metric-value\">${breakevenMonths} month${breakevenMonths===1?'':'s'}</span></div>`;
+            if (breakevenMonths != null) mainHtml += `<div id=\"breakevenCalc\" class=\"calc-explanation\">Time until cumulative interest avoided ($${next12InterestAvoided.toLocaleString('en-US', {maximumFractionDigits: 0})} in first 12 months) equals the upfront cost of taxes and penalties ($${taxesPenalties.toLocaleString('en-US', {maximumFractionDigits: 0})}). This is a simple payback period ignoring opportunity cost.</div>`;
             // Oversize-withdrawal warning if withdrawal dwarfs loan allocation and auto-withdraw is off
             if (!autoWithdraw && totalLoanPayments > 0 && withdrawal > totalLoanPayments * 2) {
                 const ratio = (withdrawal / (totalLoanPayments || 1)).toFixed(1);
-                mainHtml += `<div class=\"warning\"><strong>Warning:</strong> You're withdrawing $${withdrawal.toLocaleString()} to fund $${totalLoanPayments.toLocaleString()} in paydowns (≈${ratio}×). Consider enabling \"Only withdraw what's needed\" to avoid excessive foregone growth.</div>`;
+                mainHtml += `<div class=\"warning\"><strong>Warning:</strong> You're withdrawing $${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})} to fund $${totalLoanPayments.toLocaleString('en-US', {maximumFractionDigits: 0})} in paydowns (≈${ratio}×). Consider enabling \"Only withdraw what's needed\" to avoid excessive foregone growth.</div>`;
             }
-            mainHtml += `<div class=\"metric\"><span>Foregone Growth on Withdrawal (${projectionYears} yrs):</span><span class=\"metric-value\">-$${futureValueLost.toLocaleString()}</span></div>`;
+            mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('foregoneCalc')\">Foregone Growth on Withdrawal (${projectionYears} yrs):</span></span><span class=\"metric-value\">$${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            mainHtml += `<div id=\"foregoneCalc\" class=\"calc-explanation\">Opportunity cost of withdrawing funds from retirement account. Withdrawal ($${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}) × (1 + ${(expectedReturn*100).toFixed(1)}%)^${projectionYears} = $${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})} in potential growth over ${projectionYears} years.</div>`;
             if (rothRedirectEnabled) {
                 const remainingTermMode = document.getElementById('rothTermRemaining')?.checked;
                 if (remainingTermMode) {
-                    const paidLoans = lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance === 0 && lb.originalMonths > 0);
+                    const paidLoans = lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance < 0.01 && lb.originalMonths > 0);
                     const maxMonths = paidLoans.reduce((m, lb) => Math.max(m, lb.originalMonths || 0), 0);
-                    mainHtml += `<div class=\"metric impact-roth\"><span>Roth IRA Redirected Funding Amount (remaining term: up to ${maxMonths} mo at $${(rothMonthlyAmount||0).toLocaleString()}/mo):</span><span class=\"metric-value\">$${(rothContributions||0).toLocaleString()}</span></div>`;
+                    mainHtml += `<div class=\"metric impact-roth\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('rothContribCalc')\">Roth IRA Redirected Funding Amount (remaining term: up to ${maxMonths} mo at $${(rothMonthlyAmount||0).toLocaleString('en-US', {maximumFractionDigits: 0})}/mo):</span></span><span class=\"metric-value\">$${(rothContributions||0).toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
                 } else {
-                    mainHtml += `<div class=\"metric impact-roth\"><span>Roth IRA Redirected Funding Amount (${projectionYears} yrs: $${(rothMonthlyAmount||0).toLocaleString()}/mo × ${contribMonths} mo):</span><span class=\"metric-value\">$${(rothContributions||0).toLocaleString()}</span></div>`;
+                    mainHtml += `<div class=\"metric impact-roth\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('rothContribCalc')\">Roth IRA Redirected Funding Amount (${projectionYears} yrs: $${(rothMonthlyAmount||0).toLocaleString('en-US', {maximumFractionDigits: 0})}/mo × ${contribMonths} mo):</span></span><span class=\"metric-value\">$${(rothContributions||0).toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
                 }
-                mainHtml += `<div class=\"metric impact-roth\"><span>Roth IRA Future Value (${projectionYears} yrs):</span><span class=\"metric-value\">+$${rothFutureValue.toLocaleString()}</span></div>`;
+                mainHtml += `<div id=\"rothContribCalc\" class=\"calc-explanation\">Total contributions to Roth IRA using freed monthly loan payments. Only available from loans you completely pay off (balance = $0). Monthly contribution is limited by available freed cashflow.<br><br><strong>Calculation Factors:</strong><br>• Roth Redirection Enabled: ${rothRedirectEnabled ? 'Yes' : 'No'}<br>• Requested Monthly Amount: $${rothMonthlyAmount}<br>• Available Freed Monthly: $${freedMonthlyPayments}<br>• Actual Monthly Contribution: $${Math.min(rothMonthlyAmount, freedMonthlyPayments)}<br>• Term Limitation Mode: ${remainingTermMode ? 'Original loan term only' : 'Full projection period'}<br>• Loans Completely Paid Off: ${lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance < 0.01).length}<br>• Projection Time Horizon: ${projectionYears} years<br><br><strong>Calculation:</strong><br>${remainingTermMode ? 
+                    `Monthly Contribution ($${Math.min(rothMonthlyAmount, freedMonthlyPayments)}) × Loan Term (${lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance < 0.01 && lb.originalMonths > 0).reduce((m, lb) => Math.max(m, lb.originalMonths || 0), 0)} months) = $${rothContributions.toLocaleString('en-US', {maximumFractionDigits: 0})}` :
+                    `Monthly Contribution ($${Math.min(rothMonthlyAmount, freedMonthlyPayments)}) × Full Period (${projectionYears} years × 12 months) = $${Math.min(rothMonthlyAmount, freedMonthlyPayments)} × ${contribMonths} = $${rothContributions.toLocaleString('en-US', {maximumFractionDigits: 0})}`
+                }</div>`;
+                mainHtml += `<div class=\"metric impact-roth\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('rothFVCalc')\">Roth IRA Future Value (${projectionYears} yrs):</span></span><span class=\"metric-value\">+$${rothFutureValue.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+                mainHtml += `<div id=\"rothFVCalc\" class=\"calc-explanation\">Future value of Roth contributions compounded at ${(expectedReturn*100).toFixed(1)}% annually. Calculated using monthly contribution pattern ${remainingTermMode ? 'for original loan term only' : 'for full projection period'}, then grown to ${projectionYears}-year horizon.<br><br><strong>Calculation:</strong><br>${
+                    rothContributions > 0 ? 
+                        (expectedReturn === 0 ? 
+                            `No growth rate: $${rothContributions.toLocaleString('en-US', {maximumFractionDigits: 0})} (contributions only)` :
+                            `Monthly Contribution ($${Math.min(rothMonthlyAmount, freedMonthlyPayments)}) × Future Value Annuity Factor = $${rothFutureValue.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>Using ${(expectedReturn*100).toFixed(1)}%/year (${((expectedReturn/12)*100).toFixed(3)}%/month) for ${remainingTermMode ? lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance < 0.01 && lb.originalMonths > 0).reduce((m, lb) => Math.max(m, lb.originalMonths || 0), 0) : contribMonths} months`) :
+                        'No contributions = No future value'
+                }</div>`;
                 if ((lastFreedMonthly || 0) === 0) {
                     mainHtml += `<div class=\"tax-info\"><strong>Why $0?</strong> Roth redirection only uses monthly payments from loans you completely pay off. No loans were fully paid, so there's no monthly cashflow to redirect.</div>`;
                 } else if (rothMonthlyAmount === 0) {
-                    mainHtml += `<div class=\"tax-info\">Set a monthly redirect above $0 (up to $${(lastFreedMonthly||0).toLocaleString()}) to see projected Roth growth.</div>`;
+                    mainHtml += `<div class=\"tax-info\">Set a monthly redirect above $0 (up to $${(lastFreedMonthly||0).toLocaleString('en-US', {maximumFractionDigits: 0})}) to see projected Roth growth.</div>`;
                 }
             }
             const netWealthImpact = totalInterestSaved - additionalTax - earlyPenalty - futureValueLost + (rothRedirectEnabled ? rothFutureValue : 0);
-            mainHtml += `<div class=\"metric\"><span><strong>Net ${projectionYears}-Year Impact (All Factors):</strong></span><span class=\"metric-value\"><strong>${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString()}</strong></span></div>`;
+            mainHtml += `<div class=\"metric\"><span><strong><span class=\"calc-link\" onclick=\"toggleCalcExplanation('netImpactCalc')\">Net ${projectionYears}-Year Impact (All Factors):</span></strong></span><span class=\"metric-value\"><strong>${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong></span></div>`;
+            mainHtml += `<div id=\"netImpactCalc\" class=\"calc-explanation\"><strong>Complete Financial Impact:</strong><br>+ Interest Saved: $${totalInterestSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>- Taxes & Penalties: $${taxesPenalties.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>- Foregone Growth: $${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}${rothRedirectEnabled ? '<br>+ Roth IRA Growth: $' + rothFutureValue.toLocaleString('en-US', {maximumFractionDigits: 0}) : ''}<br>= <strong>Net Impact: ${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong></div>`;
+
+            // Add special callout for Roth vs Traditional comparison
+            if (accountType === 'roth') {
+                const traditionalTaxesPenalties = withdrawal * 0.25; // Rough estimate for comparison
+                const traditionalNetImpact = totalInterestSaved - traditionalTaxesPenalties - futureValueLost + (rothRedirectEnabled ? rothFutureValue : 0);
+                const rothAdvantage = netWealthImpact - traditionalNetImpact;
+                
+                mainHtml += `<div class=\"tax-info\" style=\"background: #e8f5e8; border-color: #27ae60;\"><strong>🎉 Roth IRA Advantage!</strong><br>By using Roth funds instead of traditional retirement account withdrawals, you avoid an estimated $${traditionalTaxesPenalties.toLocaleString('en-US', {maximumFractionDigits: 0})} in taxes and penalties (assuming ~25% effective rate).<br><br><strong>Estimated advantage over traditional withdrawal: +$${rothAdvantage.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong><br><br><em>This makes loan payoff much more attractive since you get the full withdrawal amount to work with!</em></div>`;
+            }
 
 
             //Add Comment
@@ -940,243 +1052,336 @@
                 const penaltyRate = earlyPenalty > 0 ? earlyPenalty / withdrawal : 0;
                 const allInEffective = (additionalTax + earlyPenalty) / withdrawal;
                 const pct = x => (x*100).toFixed(1).replace(/\.0$/, '');
-                mainHtml += `\n<div class=\"loan-breakdown-wrapper\" id=\"taxRateBreakdown\">\n <details open>\n  <summary style=\"cursor:pointer; font-weight:600;\">Tax Rate Breakdown</summary>\n  <div class=\"loan-breakdown-grid\">\n    <div><span>Marginal Federal:</span><span>${pct(marginalFederal)}%</span></div>\n    ${marginalState>0 ? `<div><span>Marginal State:</span><span>${pct(marginalState)}%</span></div>` : ''}\n    ${marginalState>0 ? `<div><span>Marginal Combined:</span><span>${pct(marginalFederal + marginalState)}%</span></div>` : ''}\n    <div><span>Effective Federal:</span><span>${pct(effectiveFederal)}%</span></div>\n    ${marginalState>0 ? `<div><span>Effective State:</span><span>${pct(effectiveState)}%</span></div>` : ''}\n    <div><span>Effective Combined:</span><span>${pct(effectiveCombined)}%</span></div>\n    ${shieldPortion>0 ? `<div><span>Deduction Shield:</span><span>${pct(shieldPct)}% ($${shieldPortion.toLocaleString()})</span></div>` : ''}\n    ${earlyPenalty>0 ? `<div><span>Penalty Rate:</span><span>${pct(penaltyRate)}%</span></div>` : ''}\n    ${earlyPenalty>0 ? `<div><span>All-In Effective:</span><span>${pct(allInEffective)}%</span></div>` : ''}\n  </div>\n </details>\n</div>`;
+                mainHtml += `\n<div class=\"loan-breakdown-wrapper\" id=\"taxRateBreakdown\">\n <details open>\n  <summary style=\"cursor:pointer; font-weight:600;\">Tax Rate Breakdown</summary>\n  <div class=\"loan-breakdown-grid\">\n    <div><span>Marginal Federal:</span><span>${pct(marginalFederal)}%</span></div>\n    ${marginalState>0 ? `<div><span>Marginal State:</span><span>${pct(marginalState)}%</span></div>` : ''}\n    ${marginalState>0 ? `<div><span>Marginal Combined:</span><span>${pct(marginalFederal + marginalState)}%</span></div>` : ''}\n    <div><span>Effective Federal:</span><span>${pct(effectiveFederal)}%</span></div>\n    ${marginalState>0 ? `<div><span>Effective State:</span><span>${pct(effectiveState)}%</span></div>` : ''}\n    <div><span>Effective Combined:</span><span>${pct(effectiveCombined)}%</span></div>\n    ${shieldPortion>0 ? `<div><span>Deduction Shield:</span><span>${pct(shieldPct)}% ($${shieldPortion.toLocaleString('en-US', {maximumFractionDigits: 0})})</span></div>` : ''}\n    ${earlyPenalty>0 ? `<div><span>Penalty Rate:</span><span>${pct(penaltyRate)}%</span></div>` : ''}\n    ${earlyPenalty>0 ? `<div><span>All-In Effective:</span><span>${pct(allInEffective)}%</span></div>` : ''}\n  </div>\n </details>\n</div>`;
             }
 
             // Loan breakdown
             if (loanBreakdown.length > 0) {
                 const rows = loanBreakdown.map(lb => {
-                    if (lb.warning) return `<div class=\"loan-breakdown-item warning-item\"><strong>${lb.purpose}</strong> - ${lb.warning}</div>`;
-                    return `<div class=\"loan-breakdown-item\">\n <details>\n  <summary><strong>${lb.purpose}</strong> — Payment Applied: $${lb.paymentMade.toLocaleString()} | Interest Saved: $${lb.interestSaved.toLocaleString()}</summary>\n  <div class=\"loan-breakdown-grid\">\n    <div><span>Original Balance:</span><span>$${lb.balance.toLocaleString()}</span></div>\n    <div><span>Rate (APR):</span><span>${lb.rateAnnual.toFixed(2)}%</span></div>\n    <div><span>Monthly Payment:</span><span>$${lb.monthlyPayment.toLocaleString()}</span></div>\n    <div><span>Original Months:</span><span>${lb.originalMonths}</span></div>\n    <div><span>New Months:</span><span>${lb.newMonths}</span></div>\n    <div><span>Months Saved:</span><span>${(lb.monthsSaved).toFixed(1)}</span></div>\n    <div><span>Original Interest:</span><span>$${lb.originalInterest.toFixed(2)}</span></div>\n    <div><span>New Interest:</span><span>$${lb.newInterest.toFixed(2)}</span></div>\n    <div><span>Interest Saved:</span><span class=\"highlight\">$${lb.interestSaved.toFixed(2)}</span></div>\n    <div><span>Remaining Balance:</span><span>$${(lb.newBalance||0).toLocaleString()}</span></div>\n  </div>\n </details>\n</div>`;
+                    if (lb.warning) {
+                        return `<div class="loan-breakdown-item"><strong>${lb.purpose}</strong>: ${lb.warning}</div>`;
+                    }
+                    return `
+                        <div class="loan-breakdown-item">
+                            <details open>
+                                <summary>${lb.purpose}</summary>
+                                <div class="grid">
+                                    <div><strong>Original Loan Amount:</strong> $${lb.balance.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                                    <div><strong>Monthly Payment:</strong> $${lb.monthlyPayment.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                                    <div><strong>Interest Rate:</strong> ${lb.rateAnnual.toFixed(2)}%</div>
+                                    <div><strong>Months Originally Scheduled:</strong> ${lb.originalMonths.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                                    <div><strong>New Balance After Paydown:</strong> $${lb.newBalance.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                                    <div><strong>Interest Saved:</strong> $${lb.interestSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                                    <div><strong>New Months to Payoff:</strong> ${lb.newMonths.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                                    <div><strong>Months Reduced:</strong> ${lb.monthsSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+                                </div>
+                            </details>
+                        </div>
+                    `;
                 }).join('');
-                mainHtml += `\n<div class=\"loan-breakdown-wrapper\" id=\"loanBreakdownSection\">\n <div class=\"flex-between\">\n  <h3 style=\"margin:0;\">Per-Loan Breakdown</h3>\n  <button id=\"toggleBreakdownBtn\" class=\"btn btn-primary btn-compact\">Hide</button>\n </div>\n <div class=\"loan-breakdown-help\" id=\"loanBreakdownHelp\">Expand each loan to view payoff impact details.</div>\n <div id=\"loanBreakdownItems\">${rows}</div>\n</div>`;
-            }
-
-            resultsContent.innerHTML = mainHtml;
-
-            // Toggle behavior
-            const toggleBtn = document.getElementById('toggleBreakdownBtn');
-            if (toggleBtn) {
-                const items = document.getElementById('loanBreakdownItems');
-                const help = document.getElementById('loanBreakdownHelp');
-                if (loanBreakdownCollapsed) {
-                    if (items) items.style.display = 'none';
-                    if (help) help.style.display = 'none';
-                    toggleBtn.textContent = 'Show';
-                }
-                toggleBtn.onclick = () => {
-                    const hide = !loanBreakdownCollapsed;
-                    loanBreakdownCollapsed = hide;
-                    if (items) items.style.display = hide ? 'none' : '';
-                    if (help) help.style.display = hide ? 'none' : '';
-                    toggleBtn.textContent = hide ? 'Show' : 'Hide';
-                };
-            }
-
-            if (withdrawal > 0 && (additionalTax > 0 || earlyPenalty > 0)) {
-                resultsContent.innerHTML += `\n<div class=\"tax-info\"><strong>Tax & Penalty Impact:</strong> Taxable income changes from $${baseTaxable.taxable.toLocaleString()} to $${afterTaxable.taxable.toLocaleString()}, tax: $${additionalTax.toLocaleString()}${earlyPenaltyEnabled ? `, penalty: $${earlyPenalty.toLocaleString()}` : ''}${shieldPortion>0 ? ` (includes $${shieldPortion.toLocaleString()} shielded by deduction)` : ''}. </div>`;
-            }
-        }
-        
-        // Update Roth redirect display
-        function updateRothDisplay() {
-            const rothAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
-            const totalMonthlyPayments = loans.reduce((sum, loanId) => {
-                return sum + (parseFloat(document.getElementById(`${loanId}_payment`).value) || 0);
-            }, 0);
-            
-            document.getElementById('rothRedirectAmount').textContent = rothAmount.toLocaleString();
-            const percentage = totalMonthlyPayments > 0 ? Math.round((rothAmount / totalMonthlyPayments) * 100) : 0;
-            document.getElementById('rothRedirectPercent').textContent = percentage;
-        }
-        
-        // Event listeners
-        document.getElementById('withdrawalSlider').addEventListener('input', calculateResults);
-        document.getElementById('rothRedirectCheck').addEventListener('change', function() {
-            const options = document.getElementById('rothRedirectOptions');
-            if (this.checked) {
-                options.classList.remove('hidden');
-            } else {
-                options.classList.add('hidden');
-            }
-            calculateResults();
-        });
-        document.getElementById('rothRedirectSlider').addEventListener('input', function() {
-            updateRothDisplay();
-            calculateResults();
-        });
-        const earlyPenaltyEl = document.getElementById('earlyPenaltyCheck');
-        if (earlyPenaltyEl) {
-            earlyPenaltyEl.addEventListener('change', calculateResults);
-        }
-        
-        ['taxableIncome', 'filingStatus', 'retirementBalance', 'expectedReturn'].forEach(id => {
-            document.getElementById(id).addEventListener('input', updateCalculator);
-        });
-
-        // Projection horizon selector insertion
-        (function addProjectionSelector(){
-            const parent = document.getElementById('calculatorSection');
-            if (!document.getElementById('projectionYears')) {
-                const div = document.createElement('div');
-                div.className = 'form-group';
-                div.innerHTML = `
-                    <label for="projectionYears">Projection Horizon (Years)</label>
-                    <select id="projectionYears">
-                        <option value="5">5</option>
-                        <option value="10" selected>10</option>
-                        <option value="15">15</option>
-                    </select>
-                `;
-                parent.insertBefore(div, document.getElementById('loanSliders'));
-                document.getElementById('projectionYears').addEventListener('change', calculateResults);
-            }
-        })();
-
-        // Assumptions block
-        (function addAssumptionsBlock(){
-            if (!document.getElementById('assumptionsBlock')) {
-                const results = document.getElementById('results');
-                const div = document.createElement('div');
-                div.id = 'assumptionsBlock';
-                div.className = 'assumptions-block';
-                div.innerHTML = `
-                    <strong>Model Assumptions:</strong>
-                    <ul>
-                        <li>If "Early Withdrawal Penalty" is checked, a 10% penalty applies; otherwise assumes age 59½+ (no penalty).</li>
-                        <li>Federal tax modeled with 2024 brackets; state tax optional as a flat rate.</li>
-                        <li>Deduction modeling: uses standard deduction + age adjustments unless itemized entered; unchecking standard treats income as already taxable.</li>
-                        <li>Withdrawal would otherwise remain invested at stated return.</li>
-                        <li>Loan payment amount stays constant after lump sum.</li>
-                        <li>Roth redirection limited to fully paid-off loan payments.</li>
-                        <li>Returns compounded annually for lump sum; monthly for Roth contributions.</li>
-                        <li>Interest savings based on precise amortization simulation.</li>
-                    </ul>
-                    <div style="margin-top:6px; font-size:0.85em; opacity:0.85;">
-                        See also: <a href="StandardDeduction.md" target="_blank" rel="noopener">Standard Deduction docs</a> for the deduction, age 65 adders, and shield explanation.
+                const breakdownHtml = `
+                    <div class="section">
+                        <h2>📊 Loan Breakdown Details</h2>
+                        <div class="grid">
+                            ${rows}
+                        </div>
                     </div>
                 `;
-                results.appendChild(div);
+                mainHtml += breakdownHtml;
             }
-        })();
-        
-        // Initialize with one loan
-        addLoan();
-
-        // Reset all inputs and loans
-        function resetApp() {
-            // Clear loans
-            const list = document.getElementById('loansList');
-            list.innerHTML = '';
-            loans = [];
-            loanCounter = 0;
-            // Reset key inputs
-            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-            setVal('taxableIncome', '');
-            setVal('retirementBalance', '');
-            setVal('expectedReturn', '7');
-            setVal('stateTaxRate', '0');
-            const fs = document.getElementById('filingStatus'); if (fs) fs.value = 'single';
-            const ageSel = document.getElementById('age65Addl'); if (ageSel) ageSel.value = 'none';
-            const sd = document.getElementById('applyStandardDeduction'); if (sd) sd.checked = true;
-            setVal('itemizedDeduction', '0');
-            const pen = document.getElementById('earlyPenaltyCheck'); if (pen) pen.checked = false;
-            const w = document.getElementById('withdrawalSlider'); if (w) w.value = '0';
-            const rothCk = document.getElementById('rothRedirectCheck'); if (rothCk) rothCk.checked = false;
-            const rothOpt = document.getElementById('rothRedirectOptions'); if (rothOpt) rothOpt.classList.add('hidden');
-            const rothSl = document.getElementById('rothRedirectSlider'); if (rothSl) rothSl.value = '0';
-            // Add one blank loan
-            addLoan();
+            
+            // Clear and set the complete results content in one operation
+            resultsContent.innerHTML = mainHtml;
         }
 
-        // Load sample data set for quick demo
-        function loadSampleData() {
+        function updateRothDisplay() {
+            const monthlyAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
+            document.getElementById('rothRedirectAmount').textContent = monthlyAmount.toLocaleString('en-US', {maximumFractionDigits: 0});
+            const percentage = lastFreedMonthly > 0 ? ((monthlyAmount / lastFreedMonthly) * 100) : 0;
+            document.getElementById('rothRedirectPercent').textContent = percentage.toFixed(0);
+        }
+
+        function updateAccountTypeUI() {
+            const accountType = document.getElementById('accountType').value;
+            const penaltyContainer = document.getElementById('earlyPenaltyContainer');
+            const penaltyLabel = document.getElementById('penaltyLabel');
+            const penaltyDescription = document.getElementById('penaltyDescription');
+            const autoWithdrawNote = document.getElementById('autoWithdrawNote');
+            
+            if (accountType === 'roth') {
+                // Hide penalty options for Roth
+                penaltyContainer.style.display = 'none';
+                autoWithdrawNote.textContent = 'Automatically sizes the withdrawal to cover loan allocations. No taxes or penalties on Roth contribution withdrawals.';
+            } else {
+                // Show penalty options for Traditional
+                penaltyContainer.style.display = 'block';
+                autoWithdrawNote.textContent = 'Automatically sizes the pre-tax withdrawal to cover loan allocations after tax and penalties. Prevents oversized withdrawals and inflated foregone-growth penalties.';
+            }
+        }
+
+        function toggleCalcExplanation(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.classList.toggle('show');
+            }
+        }
+
+        // Scenario Management
+        function saveScenario() {
+            const name = prompt("Enter a name for this scenario:");
+            if (!name) return;
+
+            const scenario = {
+                taxableIncome: document.getElementById('taxableIncome').value,
+                filingStatus: document.getElementById('filingStatus').value,
+                accountType: document.getElementById('accountType').value,
+                retirementBalance: document.getElementById('retirementBalance').value,
+                expectedReturn: document.getElementById('expectedReturn').value,
+                projectionYears: document.getElementById('projectionYears').value,
+                stateTaxRate: document.getElementById('stateTaxRate').value,
+                applyStandardDeduction: document.getElementById('applyStandardDeduction').checked,
+                itemizedDeduction: document.getElementById('itemizedDeduction').value,
+                age65Addl: document.getElementById('age65Addl').value,
+                earlyPenaltyCheck: document.getElementById('earlyPenaltyCheck').checked,
+                autoWithdrawCheck: document.getElementById('autoWithdrawCheck').checked,
+                // Roth options
+                rothRedirectCheck: document.getElementById('rothRedirectCheck').checked,
+                rothRedirectSlider: document.getElementById('rothRedirectSlider').value,
+                rothTermRemaining: document.getElementById('rothTermRemaining').checked,
+                loans: loans.map(loanId => ({
+                    purpose: document.getElementById(`${loanId}_purpose`).value,
+                    rate: document.getElementById(`${loanId}_rate`).value,
+                    balance: document.getElementById(`${loanId}_balance`).value,
+                    payment: document.getElementById(`${loanId}_payment`).value,
+                }))
+            };
+
+            localStorage.setItem(`scenario_${name}`, JSON.stringify(scenario));
+            alert(`Scenario "${name}" saved!`);
+            loadScenarioList();
+        }
+
+        function loadScenarioList() {
+            const select = document.getElementById('scenarioSelect');
+            select.innerHTML = '<option value="">-- Select a Scenario --</option>';
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('scenario_')) {
+                    const name = key.split('scenario_')[1];
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        document.getElementById('scenarioSelect').addEventListener('change', function() {
+            const name = this.value;
+            if (!name) return;
+
+            const scenarioJSON = localStorage.getItem(`scenario_${name}`);
+            if (!scenarioJSON) {
+                alert("Could not load scenario.");
+                return;
+            }
+
+            const scenario = JSON.parse(scenarioJSON);
+
+            // Reset current state
             resetApp();
-            // Fill top-level inputs
-            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-            setVal('taxableIncome', '75000');
-            setVal('retirementBalance', '50000');
-            setVal('expectedReturn', '7');
-            const fs = document.getElementById('filingStatus'); if (fs) fs.value = 'single';
-            setVal('stateTaxRate', '5');
-            // Replace the one blank loan with three samples
-            const list = document.getElementById('loansList');
-            list.innerHTML = '';
+            document.getElementById('loansList').innerHTML = '';
             loans = [];
             loanCounter = 0;
-            const add = (purpose, rate, balance, pmt) => {
+
+            // Load scenario data
+            document.getElementById('taxableIncome').value = scenario.taxableIncome;
+            document.getElementById('filingStatus').value = scenario.filingStatus;
+            document.getElementById('accountType').value = scenario.accountType || 'traditional';
+            document.getElementById('retirementBalance').value = scenario.retirementBalance;
+            document.getElementById('expectedReturn').value = scenario.expectedReturn;
+            document.getElementById('projectionYears').value = scenario.projectionYears || '10';
+            document.getElementById('stateTaxRate').value = scenario.stateTaxRate;
+            document.getElementById('applyStandardDeduction').checked = scenario.applyStandardDeduction;
+            document.getElementById('itemizedDeduction').value = scenario.itemizedDeduction;
+            document.getElementById('age65Addl').value = scenario.age65Addl;
+            document.getElementById('earlyPenaltyCheck').checked = scenario.earlyPenaltyCheck;
+            document.getElementById('autoWithdrawCheck').checked = scenario.autoWithdrawCheck;
+            
+            // Roth options
+            document.getElementById('rothRedirectCheck').checked = scenario.rothRedirectCheck;
+            document.getElementById('rothRedirectSlider').value = scenario.rothRedirectSlider;
+            document.getElementById('rothTermRemaining').checked = scenario.rothTermRemaining;
+            
+            // Update Roth options visibility based on checkbox state
+            const rothOptionsPanel = document.getElementById('rothRedirectOptions');
+            if (rothOptionsPanel) {
+                if (scenario.rothRedirectCheck) {
+                    rothOptionsPanel.classList.remove('hidden');
+                } else {
+                    rothOptionsPanel.classList.add('hidden');
+                }
+            }
+
+            scenario.loans.forEach(loanData => {
                 addLoan();
-                const id = loans[loans.length-1];
-                document.getElementById(`${id}_purpose`).value = purpose;
-                document.getElementById(`${id}_rate`).value = rate;
-                document.getElementById(`${id}_balance`).value = balance;
-                document.getElementById(`${id}_payment`).value = pmt;
-            };
-            add('Van', 8.5, 19999, 350);
-            add('Credit Card', 22.9, 6500, 175);
-            add('Student Loan', 4.9, 12000, 140);
+                const loanId = loans[loans.length - 1];
+                document.getElementById(`${loanId}_purpose`).value = loanData.purpose;
+                document.getElementById(`${loanId}_rate`).value = loanData.rate;
+                document.getElementById(`${loanId}_balance`).value = loanData.balance;
+                document.getElementById(`${loanId}_payment`).value = loanData.payment;
+            });
+
+            // Update UI based on loaded account type
+            updateAccountTypeUI();
+            updateCalculator();
+            
+            // Ensure Roth display is updated after scenario load
+            setTimeout(() => {
+                updateRothDisplay();
+            }, 100);
+        });
+
+        // Missing helper functions
+        function resetApp() {
+            document.getElementById('taxableIncome').value = '';
+            document.getElementById('filingStatus').value = 'single';
+            document.getElementById('accountType').value = 'traditional';
+            document.getElementById('retirementBalance').value = '';
+            document.getElementById('expectedReturn').value = '';
+            document.getElementById('projectionYears').value = '10';
+            document.getElementById('stateTaxRate').value = '';
+            document.getElementById('applyStandardDeduction').checked = true;
+            document.getElementById('itemizedDeduction').value = '';
+            document.getElementById('age65Addl').value = 'none';
+            document.getElementById('earlyPenaltyCheck').checked = false;
+            document.getElementById('autoWithdrawCheck').checked = false;
+            document.getElementById('rothRedirectCheck').checked = false;
+            document.getElementById('rothRedirectSlider').value = 0;
+            document.getElementById('rothTermRemaining').checked = false;
+            document.getElementById('loansList').innerHTML = '';
+            loans = [];
+            loanCounter = 0;
+            updateAccountTypeUI();
             updateCalculator();
         }
 
-        // Export CSV handler
-        (function attachExport(){
-            const btn = document.getElementById('exportCsvBtn');
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    if (!lastLoanBreakdownRows || lastLoanBreakdownRows.length === 0) {
-                        alert('No loan breakdown to export.');
-                        return;
-                    }
-                    const headers = ['Purpose','Original Balance','Monthly Payment','APR (%)','Payment Applied','Original Months','New Months','Months Saved','Original Interest','New Interest','Interest Saved','Remaining Balance'];
-                    const lines = [headers.join(',')];
-                    lastLoanBreakdownRows.forEach(r => {
-                        if (r.warning) return; // skip warnings-only rows
-                        const row = [
-                            r.purpose,
-                            (r.balance||0),
-                            (r.monthlyPayment||0),
-                            (r.rateAnnual||0).toFixed(2),
-                            (r.paymentMade||0),
-                            (r.originalMonths||0),
-                            (r.newMonths||0),
-                            (r.monthsSaved||0),
-                            (r.originalInterest||0).toFixed(2),
-                            (r.newInterest||0).toFixed(2),
-                            (r.interestSaved||0).toFixed(2),
-                            (r.newBalance||0)
-                        ];
-                        lines.push(row.join(','));
-                    });
-                    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'loan_breakdown.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                });
-            }
-        })();
-        
-        // Add listener so auto-withdraw recalculates immediately
-        const autoW = document.getElementById('autoWithdrawCheck');
-        if (autoW) {
-          autoW.addEventListener('change', calculateResults);
-        }
-        
-        // Recalc when remaining-term toggle changes
-        const rothTermChk = document.getElementById('rothTermRemaining');
-        if (rothTermChk) {
-          rothTermChk.addEventListener('change', calculateResults);
+        function loadSampleData() {
+            document.getElementById('taxableIncome').value = '85000';
+            document.getElementById('filingStatus').value = 'single';
+            document.getElementById('retirementBalance').value = '150000';
+            document.getElementById('expectedReturn').value = '7';
+            document.getElementById('stateTaxRate').value = '5';
+            document.getElementById('applyStandardDeduction').checked = true;
+            document.getElementById('itemizedDeduction').value = '';
+            document.getElementById('age65Addl').value = 'none';
+            document.getElementById('earlyPenaltyCheck').checked = true;
+            
+            // Clear existing loans first
+            document.getElementById('loansList').innerHTML = '';
+            loans = [];
+            loanCounter = 0;
+            
+            // Add sample loan
+            addLoan(true); // prevent focus
+            const loanId = loans[0];
+            document.getElementById(`${loanId}_purpose`).value = 'Car Loan';
+            document.getElementById(`${loanId}_rate`).value = '6.5';
+            document.getElementById(`${loanId}_balance`).value = '19000';
+            document.getElementById(`${loanId}_payment`).value = '380';
+            
+            updateCalculator();
         }
 
-        // Oversize withdrawal warning: if withdrawal >> needed for selected loan paydowns
-        (function addOversizeWarning(){
-          const results = document.getElementById('resultsContent');
-          if (!results) return;
-        })();
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial focus on Annual Gross Income field
+            const taxableIncome = document.getElementById('taxableIncome');
+            if (taxableIncome) {
+                setTimeout(() => taxableIncome.focus(), 100);
+            }
+            
+            // Initialize account type UI
+            updateAccountTypeUI();
+            
+            // Load scenario dropdown
+            loadScenarioList();
+            
+            // Show scenario loader if there are saved scenarios
+            const scenarioLoader = document.getElementById('scenario-loader');
+            if (Object.keys(localStorage).some(key => key.startsWith('scenario_'))) {
+                scenarioLoader.classList.remove('hidden');
+            }
+
+            // Add event listeners for checkboxes
+            const autoWithdrawCheck = document.getElementById('autoWithdrawCheck');
+            if (autoWithdrawCheck) {
+                autoWithdrawCheck.addEventListener('change', calculateResults);
+            }
+
+            const rothRedirectCheck = document.getElementById('rothRedirectCheck');
+            if (rothRedirectCheck) {
+                rothRedirectCheck.addEventListener('change', function() {
+                    const rothOptionsPanel = document.getElementById('rothRedirectOptions');
+                    if (rothOptionsPanel) {
+                        if (this.checked) {
+                            rothOptionsPanel.classList.remove('hidden');
+                        } else {
+                            rothOptionsPanel.classList.add('hidden');
+                        }
+                    }
+                    calculateResults();
+                });
+            }
+
+            const rothRedirectSlider = document.getElementById('rothRedirectSlider');
+            if (rothRedirectSlider) {
+                rothRedirectSlider.addEventListener('input', updateRothDisplay);
+            }
+
+            const rothTermRemaining = document.getElementById('rothTermRemaining');
+            if (rothTermRemaining) {
+                rothTermRemaining.addEventListener('change', calculateResults);
+            }
+
+            // Add event listeners for all input fields
+            const inputs = ['taxableIncome', 'filingStatus', 'accountType', 'retirementBalance', 'expectedReturn', 'projectionYears', 'stateTaxRate', 'itemizedDeduction', 'age65Addl'];
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', updateCalculator);
+                    if (element.tagName === 'SELECT') {
+                        element.addEventListener('change', updateCalculator);
+                    }
+                }
+            });
+
+            // Special handler for account type to update UI
+            const accountTypeSelect = document.getElementById('accountType');
+            if (accountTypeSelect) {
+                accountTypeSelect.addEventListener('change', function() {
+                    updateAccountTypeUI();
+                    updateCalculator();
+                });
+            }
+
+            const withdrawalSlider = document.getElementById('withdrawalSlider');
+            if (withdrawalSlider) {
+                withdrawalSlider.addEventListener('input', calculateResults);
+            }
+
+            const applyStandardDeduction = document.getElementById('applyStandardDeduction');
+            if (applyStandardDeduction) {
+                applyStandardDeduction.addEventListener('change', updateCalculator);
+            }
+
+            const earlyPenaltyCheck = document.getElementById('earlyPenaltyCheck');
+            if (earlyPenaltyCheck) {
+                earlyPenaltyCheck.addEventListener('change', calculateResults);
+            }
+        });
+
+        // Initial load
+        loadScenarioList();
     </script>
 </body>
 </html>
