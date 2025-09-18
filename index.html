@@ -349,6 +349,35 @@
             </div>
         </div>
         
+        <!-- Market Outlook Section -->
+        <div class="section">
+            <h2>📈 Market Outlook (Optional)</h2>
+            <div class="form-group">
+                <label class="inline-flex">
+                    <input type="checkbox" id="marketTimingEnabled" class="mr-6">
+                    <strong>Factor in potential market correction</strong>
+                </label>
+                <small class="panel-note">If you believe the market is overvalued and due for a correction, this adjusts the foregone growth calculation to reflect potential downside risk.</small>
+            </div>
+            <div id="marketTimingOptions" class="hidden">
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="marketCorrectionPct">Expected Market Correction (%)</label>
+                        <input type="number" id="marketCorrectionPct" min="0" max="80" step="1" value="30">
+                        <small class="panel-note">How much do you expect the market to drop? (e.g., 30% for a significant correction)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="recoveryTimeYears">Recovery Time (Years)</label>
+                        <input type="number" id="recoveryTimeYears" min="0.5" max="10" step="0.5" value="3">
+                        <small class="panel-note">How long until the market recovers to pre-correction levels?</small>
+                    </div>
+                </div>
+                <div class="tax-info">
+                    <strong>Market Timing Logic:</strong> If a correction occurs early in the projection period, your withdrawn funds avoid the loss but also miss the recovery growth. This calculation models both the downside protection and opportunity cost.
+                </div>
+            </div>
+        </div>
+        
         <!-- Loans Section -->
         <div class="section">
             <h2>🏦 Current Loans</h2>
@@ -807,6 +836,41 @@
             // Future growth foregone (lump sum left invested)
             const newRetirementBalance = retirementBalance - withdrawal;
             const futureValueLost = withdrawal * Math.pow(1 + expectedReturn, projectionYears);
+            
+            // Market-adjusted foregone growth calculation
+            const marketTimingEnabled = document.getElementById('marketTimingEnabled')?.checked;
+            let marketAdjustedFutureValueLost = futureValueLost;
+            let marketTimingBenefit = 0;
+            
+            if (marketTimingEnabled) {
+                const correctionPct = (parseFloat(document.getElementById('marketCorrectionPct')?.value) || 30) / 100;
+                const recoveryYears = parseFloat(document.getElementById('recoveryTimeYears')?.value) || 3;
+                
+                // Market correction scenario: funds withdrawn avoid the correction but miss recovery growth
+                // Assumes correction happens in year 1, recovery takes specified time
+                const correctionYear = 1; // correction happens early
+                const postRecoveryYears = Math.max(0, projectionYears - recoveryYears);
+                
+                // Value if funds stayed invested through correction and recovery
+                let marketScenarioValue = withdrawal;
+                
+                // Apply correction in year 1
+                marketScenarioValue *= (1 - correctionPct);
+                
+                // Recovery period: gradual return to pre-correction level
+                if (recoveryYears > 0 && postRecoveryYears >= 0) {
+                    const recoveryRate = Math.pow(1 / (1 - correctionPct), 1 / recoveryYears) - 1;
+                    marketScenarioValue *= Math.pow(1 + recoveryRate, recoveryYears);
+                    
+                    // Post-recovery growth at normal expected return
+                    if (postRecoveryYears > 0) {
+                        marketScenarioValue *= Math.pow(1 + expectedReturn, postRecoveryYears);
+                    }
+                }
+                
+                marketAdjustedFutureValueLost = marketScenarioValue;
+                marketTimingBenefit = futureValueLost - marketAdjustedFutureValueLost;
+            }
 
             // Roth redirect future value (only from monthly redirected payments)
             // Ensure the options panel visibility matches the checkbox state
@@ -994,8 +1058,23 @@
                 const ratio = (withdrawal / (totalLoanPayments || 1)).toFixed(1);
                 mainHtml += `<div class=\"warning\"><strong>Warning:</strong> You're withdrawing $${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})} to fund $${totalLoanPayments.toLocaleString('en-US', {maximumFractionDigits: 0})} in paydowns (≈${ratio}×). Consider enabling \"Only withdraw what's needed\" to avoid excessive foregone growth.</div>`;
             }
-            mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('foregoneCalc')\">Foregone Growth on Withdrawal (${projectionYears} yrs):</span></span><span class=\"metric-value\">$${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
-            mainHtml += `<div id=\"foregoneCalc\" class=\"calc-explanation\">Opportunity cost of withdrawing funds from retirement account. Withdrawal ($${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}) × (1 + ${(expectedReturn*100).toFixed(1)}%)^${projectionYears} = $${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})} in potential growth over ${projectionYears} years.</div>`;
+            // Standard foregone growth
+            mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('foregoneCalc')\">Foregone Growth (Standard Scenario):</span></span><span class=\"metric-value\">$${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            mainHtml += `<div id=\"foregoneCalc\" class=\"calc-explanation\">Standard opportunity cost assuming steady ${(expectedReturn*100).toFixed(1)}% annual returns. Withdrawal ($${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}) × (1 + ${(expectedReturn*100).toFixed(1)}%)^${projectionYears} = $${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})} in potential growth over ${projectionYears} years.</div>`;
+            
+            // Market-adjusted foregone growth (if enabled)
+            if (marketTimingEnabled) {
+                const correctionPct = (parseFloat(document.getElementById('marketCorrectionPct')?.value) || 30);
+                const recoveryYears = parseFloat(document.getElementById('recoveryTimeYears')?.value) || 3;
+                
+                mainHtml += `<div class=\"metric impact-immediate\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('marketForesoneCalc')\">Foregone Growth (Market Correction Scenario):</span></span><span class=\"metric-value\">$${marketAdjustedFutureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+                mainHtml += `<div id=\"marketForesoneCalc\" class=\"calc-explanation\">Adjusted opportunity cost assuming a ${correctionPct}% market correction in year 1, followed by ${recoveryYears}-year recovery period, then normal ${(expectedReturn*100).toFixed(1)}% growth. Your withdrawn funds avoid the correction but also miss the recovery growth.<br><br><strong>Calculation:</strong><br>• Withdrawal: $${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>• Apply ${correctionPct}% correction in year 1<br>• Recovery over ${recoveryYears} years to pre-correction level<br>• Normal growth for remaining ${Math.max(0, projectionYears - recoveryYears)} years<br>• Final value: $${marketAdjustedFutureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>`;
+                
+                if (marketTimingBenefit > 0) {
+                    mainHtml += `<div class=\"metric impact-roth\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('timingBenefitCalc')\">Market Timing Benefit:</span></span><span class=\"metric-value\">+$${marketTimingBenefit.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+                    mainHtml += `<div id=\"timingBenefitCalc\" class=\"calc-explanation\">Benefit from withdrawing before a market correction. Standard Foregone Growth ($${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}) - Market Correction Scenario ($${marketAdjustedFutureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}) = $${marketTimingBenefit.toLocaleString('en-US', {maximumFractionDigits: 0})} saved by avoiding the correction.<br><br><strong>Note:</strong> This is speculative and assumes your market timing prediction is accurate. Market timing is notoriously difficult even for professional investors.</div>`;
+                }
+            }
             if (rothRedirectEnabled) {
                 const remainingTermMode = document.getElementById('rothTermRemaining')?.checked;
                 if (remainingTermMode) {
@@ -1023,9 +1102,11 @@
                     mainHtml += `<div class=\"tax-info\">Set a monthly redirect above $0 (up to $${(lastFreedMonthly||0).toLocaleString('en-US', {maximumFractionDigits: 0})}) to see projected Roth growth.</div>`;
                 }
             }
-            const netWealthImpact = totalInterestSaved - additionalTax - earlyPenalty - futureValueLost + (rothRedirectEnabled ? rothFutureValue : 0);
+            const effectiveFutureValueLost = marketTimingEnabled ? marketAdjustedFutureValueLost : futureValueLost;
+            const netWealthImpact = totalInterestSaved - additionalTax - earlyPenalty - effectiveFutureValueLost + (rothRedirectEnabled ? rothFutureValue : 0);
             mainHtml += `<div class=\"metric\"><span><strong><span class=\"calc-link\" onclick=\"toggleCalcExplanation('netImpactCalc')\">Net ${projectionYears}-Year Impact (All Factors):</span></strong></span><span class=\"metric-value\"><strong>${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong></span></div>`;
-            mainHtml += `<div id=\"netImpactCalc\" class=\"calc-explanation\"><strong>Complete Financial Impact:</strong><br>+ Interest Saved: $${totalInterestSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>- Taxes & Penalties: $${taxesPenalties.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>- Foregone Growth: $${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}${rothRedirectEnabled ? '<br>+ Roth IRA Growth: $' + rothFutureValue.toLocaleString('en-US', {maximumFractionDigits: 0}) : ''}<br>= <strong>Net Impact: ${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong></div>`;
+            const foregoneLabel = marketTimingEnabled ? `Foregone Growth (Market Correction): $${effectiveFutureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}` : `Foregone Growth: $${effectiveFutureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            mainHtml += `<div id=\"netImpactCalc\" class=\"calc-explanation\"><strong>Complete Financial Impact${marketTimingEnabled ? ' (Market Correction Scenario)' : ''}:</strong><br>+ Interest Saved: $${totalInterestSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>- Taxes & Penalties: $${taxesPenalties.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>- ${foregoneLabel}${rothRedirectEnabled ? '<br>+ Roth IRA Growth: $' + rothFutureValue.toLocaleString('en-US', {maximumFractionDigits: 0}) : ''}<br>= <strong>Net Impact: ${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong>${marketTimingEnabled ? '<br><br><em>This calculation uses the market correction scenario. Disable "Factor in potential market correction" to see standard scenario.</em>' : ''}</div>`;
 
             // Add special callout for Roth vs Traditional comparison
             if (accountType === 'roth') {
@@ -1101,6 +1182,19 @@
             document.getElementById('rothRedirectPercent').textContent = percentage.toFixed(0);
         }
 
+        function updateMarketTimingUI() {
+            const marketTimingEnabled = document.getElementById('marketTimingEnabled').checked;
+            const marketTimingOptionsPanel = document.getElementById('marketTimingOptions');
+            
+            if (marketTimingOptionsPanel) {
+                if (marketTimingEnabled) {
+                    marketTimingOptionsPanel.classList.remove('hidden');
+                } else {
+                    marketTimingOptionsPanel.classList.add('hidden');
+                }
+            }
+        }
+
         function updateAccountTypeUI() {
             const accountType = document.getElementById('accountType').value;
             const penaltyContainer = document.getElementById('earlyPenaltyContainer');
@@ -1148,6 +1242,10 @@
                 rothRedirectCheck: document.getElementById('rothRedirectCheck').checked,
                 rothRedirectSlider: document.getElementById('rothRedirectSlider').value,
                 rothTermRemaining: document.getElementById('rothTermRemaining').checked,
+                // Market timing options
+                marketTimingEnabled: document.getElementById('marketTimingEnabled').checked,
+                marketCorrectionPct: document.getElementById('marketCorrectionPct').value,
+                recoveryTimeYears: document.getElementById('recoveryTimeYears').value,
                 loans: loans.map(loanId => ({
                     purpose: document.getElementById(`${loanId}_purpose`).value,
                     rate: document.getElementById(`${loanId}_rate`).value,
@@ -1212,13 +1310,27 @@
             document.getElementById('rothRedirectSlider').value = scenario.rothRedirectSlider;
             document.getElementById('rothTermRemaining').checked = scenario.rothTermRemaining;
             
-            // Update Roth options visibility based on checkbox state
+            // Market timing options
+            document.getElementById('marketTimingEnabled').checked = scenario.marketTimingEnabled || false;
+            document.getElementById('marketCorrectionPct').value = scenario.marketCorrectionPct || '30';
+            document.getElementById('recoveryTimeYears').value = scenario.recoveryTimeYears || '3';
+            
+            // Update options visibility based on checkbox states
             const rothOptionsPanel = document.getElementById('rothRedirectOptions');
             if (rothOptionsPanel) {
                 if (scenario.rothRedirectCheck) {
                     rothOptionsPanel.classList.remove('hidden');
                 } else {
                     rothOptionsPanel.classList.add('hidden');
+                }
+            }
+            
+            const marketTimingOptionsPanel = document.getElementById('marketTimingOptions');
+            if (marketTimingOptionsPanel) {
+                if (scenario.marketTimingEnabled) {
+                    marketTimingOptionsPanel.classList.remove('hidden');
+                } else {
+                    marketTimingOptionsPanel.classList.add('hidden');
                 }
             }
 
@@ -1258,10 +1370,14 @@
             document.getElementById('rothRedirectCheck').checked = false;
             document.getElementById('rothRedirectSlider').value = 0;
             document.getElementById('rothTermRemaining').checked = false;
+            document.getElementById('marketTimingEnabled').checked = false;
+            document.getElementById('marketCorrectionPct').value = '30';
+            document.getElementById('recoveryTimeYears').value = '3';
             document.getElementById('loansList').innerHTML = '';
             loans = [];
             loanCounter = 0;
             updateAccountTypeUI();
+            updateMarketTimingUI();
             updateCalculator();
         }
 
@@ -1303,6 +1419,9 @@
             // Initialize account type UI
             updateAccountTypeUI();
             
+            // Initialize market timing UI
+            updateMarketTimingUI();
+            
             // Load scenario dropdown
             loadScenarioList();
             
@@ -1341,6 +1460,25 @@
             const rothTermRemaining = document.getElementById('rothTermRemaining');
             if (rothTermRemaining) {
                 rothTermRemaining.addEventListener('change', calculateResults);
+            }
+
+            // Market timing event listeners
+            const marketTimingEnabled = document.getElementById('marketTimingEnabled');
+            if (marketTimingEnabled) {
+                marketTimingEnabled.addEventListener('change', function() {
+                    updateMarketTimingUI();
+                    calculateResults();
+                });
+            }
+
+            const marketCorrectionPct = document.getElementById('marketCorrectionPct');
+            if (marketCorrectionPct) {
+                marketCorrectionPct.addEventListener('input', calculateResults);
+            }
+
+            const recoveryTimeYears = document.getElementById('recoveryTimeYears');
+            if (recoveryTimeYears) {
+                recoveryTimeYears.addEventListener('input', calculateResults);
             }
 
             // Add event listeners for all input fields
