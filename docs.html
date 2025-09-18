@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ's Retirement Fund Loan Payoff Calculator - Documentation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        
+        h3 {
+            color: #2c3e50;
+            margin-top: 30px;
+        }
+        
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .doc-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid #3498db;
+        }
+        
+        .doc-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .doc-card h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        
+        .doc-card p {
+            margin: 0 0 15px 0;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .doc-card a {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+        
+        .doc-card a:hover {
+            background: #2980b9;
+        }
+        
+        .overview {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-item {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            font-size: 0.9em;
+        }
+        
+        .feature-item strong {
+            color: #2c3e50;
+        }
+        
+        .back-link {
+            text-align: center;
+            margin: 40px 0 20px 0;
+        }
+        
+        .back-link a {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #27ae60;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .back-link a:hover {
+            background: #229954;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 25px 0;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .warning strong {
+            color: #8b6914;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Documentation Hub</h1>
+        <p class="subtitle">Comprehensive guide to using the Retirement Fund Loan Payoff Calculator</p>
+        
+        <div class="overview">
+            <h2>🎯 What This Calculator Does</h2>
+            <p>This sophisticated financial planning tool helps you make informed decisions about using retirement funds to pay off loans. It considers multiple complex factors including:</p>
+            
+            <div class="features-list">
+                <div class="feature-item">
+                    <strong>Tax Optimization:</strong> Roth vs Traditional account analysis with precise tax bracket calculations
+                </div>
+                <div class="feature-item">
+                    <strong>Market Risk Assessment:</strong> Optional market correction modeling for realistic scenario planning
+                </div>
+                <div class="feature-item">
+                    <strong>Interest Savings:</strong> Detailed amortization analysis showing exactly how much interest you'll avoid
+                </div>
+                <div class="feature-item">
+                    <strong>Opportunity Cost:</strong> Foregone growth calculations to understand what you're giving up
+                </div>
+                <div class="feature-item">
+                    <strong>Roth Redirection:</strong> Strategy to redirect freed loan payments into Roth IRA contributions
+                </div>
+                <div class="feature-item">
+                    <strong>Professional Analysis:</strong> Comprehensive net impact calculation considering all factors
+                </div>
+            </div>
+        </div>
+        
+        <div class="warning">
+            <strong>⚠️ Important Disclaimer:</strong> This calculator is for educational and informational purposes only. It provides estimates based on the inputs you provide and should not be considered as financial advice. Always consult with a qualified financial advisor before making major financial decisions involving retirement accounts or debt management.
+        </div>
+        
+        <h2>📖 Documentation Sections</h2>
+        
+        <div class="doc-grid">
+            <div class="doc-card">
+                <h4>🚀 Quick Start Guide</h4>
+                <p>New to the calculator? Start here for a step-by-step walkthrough of the basic features and how to get meaningful results.</p>
+                <a href="quick-start.html">Get Started →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>🧮 Tax Calculations Explained</h4>
+                <p>Deep dive into how the calculator handles federal tax brackets, state taxes, standard deductions, and the complex interaction between all tax factors.</p>
+                <a href="standard-deduction.html">Learn Tax Logic →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>🛡️ Deduction Shielding</h4>
+                <p>Understand how unused deduction capacity can reduce the tax impact of retirement withdrawals, with detailed examples and scenarios.</p>
+                <a href="ShieldedByDeduction.md">See Examples →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>📈 Market Outlook Feature</h4>
+                <p>Learn about the sophisticated market correction modeling, why we added it, historical examples, and how to use it for risk assessment.</p>
+                <a href="MarketOutlook.md">Market Analysis →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>💰 Roth vs Traditional Strategy</h4>
+                <p>Comprehensive comparison of using Roth IRA funds vs Traditional retirement accounts, including tax implications and strategic considerations.</p>
+                <a href="roth-strategy.html">Roth Strategy →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>🔄 Roth Redirection Strategy</h4>
+                <p>Advanced strategy guide for redirecting freed monthly loan payments into new Roth IRA contributions to maximize long-term wealth.</p>
+                <a href="roth-redirection.html">Redirection Guide →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>📊 Understanding the Results</h4>
+                <p>Detailed explanation of all the metrics, calculations, and what each number means for your financial situation.</p>
+                <a href="results-guide.html">Interpret Results →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>🔍 Accuracy & Limitations</h4>
+                <p>Understand the assumptions, limitations, and accuracy considerations of the calculator to make informed decisions.</p>
+                <a href="accuracy-guide.html">Accuracy Info →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>💡 Common Scenarios</h4>
+                <p>Real-world examples and case studies showing how to use the calculator for different financial situations and goals.</p>
+                <a href="scenarios.html">Example Scenarios →</a>
+            </div>
+            
+            <div class="doc-card">
+                <h4>❓ FAQ & Troubleshooting</h4>
+                <p>Frequently asked questions, common issues, and troubleshooting tips to help you get the most out of the calculator.</p>
+                <a href="faq.html">Get Help →</a>
+            </div>
+        </div>
+        
+        <h2>🏗️ How It Works</h2>
+        <p>The calculator uses sophisticated financial modeling to analyze your specific situation:</p>
+        
+        <h3>1. Tax Analysis</h3>
+        <p>Uses 2024 federal tax brackets and your filing status to calculate the precise tax impact of retirement withdrawals. Handles progressive taxation, standard/itemized deductions, and state tax estimates.</p>
+        
+        <h3>2. Loan Optimization</h3>
+        <p>Performs month-by-month amortization analysis to calculate exact interest savings, payment reductions, and time savings for each loan scenario.</p>
+        
+        <h3>3. Risk Assessment</h3>
+        <p>Optional market correction modeling based on historical patterns (2000, 2008, 2020) to provide realistic opportunity cost calculations under different market scenarios.</p>
+        
+        <h3>4. Comprehensive Analysis</h3>
+        <p>Combines all factors (taxes, penalties, interest savings, foregone growth, Roth redirections) into a single net impact analysis to guide your decision-making.</p>
+        
+        <div class="back-link">
+            <a href="index.html">← Back to Calculator</a>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Created by:</strong> DJ's Financial Planning Tools | <strong>Version:</strong> 2.0 | <strong>Last Updated:</strong> September 2025</p>
+        </div>
+    </div>
+</body>
+</html>

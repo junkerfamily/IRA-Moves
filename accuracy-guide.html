@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accuracy & Limitations - Retirement Fund Loan Payoff Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        
+        .accuracy-box {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-left: 4px solid #27ae60;
+            border-radius: 0 8px 8px 0;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .limitation-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-left: 4px solid #f39c12;
+            border-radius: 0 8px 8px 0;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .assumption-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #6c757d;
+            border-radius: 0 8px 8px 0;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .nav-links {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .nav-links a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        
+        .nav-links a:hover {
+            background: #2980b9;
+        }
+        
+        ul {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Accuracy & Limitations</h1>
+        <p class="subtitle">Understanding what the calculator does well and where to exercise caution</p>
+        
+        <h2>✅ What the Calculator Does Well</h2>
+        
+        <div class="accuracy-box">
+            <h3>Highly Accurate Tax Calculations</h3>
+            <ul>
+                <li><strong>2024 Federal Tax Brackets:</strong> Uses official IRS progressive tax rates</li>
+                <li><strong>Standard Deductions:</strong> Current amounts including age 65+ adjustments</li>
+                <li><strong>Progressive Taxation:</strong> Correctly applies marginal rates to incremental income</li>
+                <li><strong>Deduction Shielding:</strong> Accurately models unused deduction capacity</li>
+            </ul>
+        </div>
+        
+        <div class="accuracy-box">
+            <h3>Precise Loan Mathematics</h3>
+            <ul>
+                <li><strong>Month-by-Month Amortization:</strong> Exact calculations, not approximations</li>
+                <li><strong>Interest Savings:</strong> Precise to the penny using actual amortization schedules</li>
+                <li><strong>Payment Timing:</strong> Correctly models when payments end and cash flow changes</li>
+                <li><strong>Multiple Loans:</strong> Handles complex scenarios with different rates and terms</li>
+            </ul>
+        </div>
+        
+        <div class="accuracy-box">
+            <h3>Sophisticated Analysis Features</h3>
+            <ul>
+                <li><strong>Roth vs Traditional:</strong> Complete tax treatment differences</li>
+                <li><strong>Market Timing:</strong> Realistic correction/recovery modeling</li>
+                <li><strong>Opportunity Cost:</strong> Compound growth calculations over any time horizon</li>
+                <li><strong>Net Impact:</strong> Comprehensive analysis considering all factors</li>
+            </ul>
+        </div>
+        
+        <h2>⚠️ Important Limitations</h2>
+        
+        <div class="limitation-box">
+            <h3>State Tax Simplification</h3>
+            <p><strong>What it does:</strong> Applies a flat percentage to the full withdrawal amount.</p>
+            <p><strong>Reality:</strong> State taxes may have their own brackets, deductions, and special rules for retirement income.</p>
+            <p><strong>Impact:</strong> Usually minor for most states, but could be significant in states with complex retirement income rules.</p>
+        </div>
+        
+        <div class="limitation-box">
+            <h3>Market Timing Speculation</h3>
+            <p><strong>What it does:</strong> Models user-specified correction scenarios.</p>
+            <p><strong>Reality:</strong> Market timing is notoriously difficult; even professional investors struggle.</p>
+            <p><strong>Impact:</strong> Use market correction features for sensitivity analysis, not as predictions.</p>
+        </div>
+        
+        <div class="limitation-box">
+            <h3>Individual Circumstances</h3>
+            <p><strong>Missing factors:</strong> Special retirement account rules, early withdrawal exceptions, state-specific retirement income treatment, AMT implications, Medicare premium impacts, etc.</p>
+            <p><strong>Impact:</strong> Results provide an excellent starting point but may need professional refinement.</p>
+        </div>
+        
+        <h2>📋 Key Assumptions</h2>
+        
+        <div class="assumption-box">
+            <h3>Tax Assumptions</h3>
+            <ul>
+                <li>Current tax law remains unchanged</li>
+                <li>No Alternative Minimum Tax (AMT) implications</li>
+                <li>Standard deduction amounts remain current</li>
+                <li>No special state retirement income exclusions</li>
+                <li>Roth withdrawals are from contributions only (not earnings)</li>
+            </ul>
+        </div>
+        
+        <div class="assumption-box">
+            <h3>Investment Assumptions</h3>
+            <ul>
+                <li>Expected returns are consistent over the time horizon</li>
+                <li>No account fees or transaction costs</li>
+                <li>Tax-deferred growth in retirement accounts</li>
+                <li>Market correction timing is speculative user input</li>
+            </ul>
+        </div>
+        
+        <div class="assumption-box">
+            <h3>Loan Assumptions</h3>
+            <ul>
+                <li>Fixed interest rates throughout loan terms</li>
+                <li>No prepayment penalties</li>
+                <li>Monthly payment frequency</li>
+                <li>No missed or late payments</li>
+            </ul>
+        </div>
+        
+        <h2>🎯 Best Practices for Use</h2>
+        
+        <div class="accuracy-box">
+            <h3>Use for Initial Analysis</h3>
+            <p>The calculator excels at providing a comprehensive first-pass analysis. Use it to understand the magnitude of different factors and identify which scenarios are worth exploring further.</p>
+        </div>
+        
+        <div class="accuracy-box">
+            <h3>Compare Scenarios</h3>
+            <p>The calculator's strength is in comparing different approaches (Roth vs Traditional, different withdrawal amounts, market timing scenarios). The relative differences are more reliable than absolute predictions.</p>
+        </div>
+        
+        <div class="accuracy-box">
+            <h3>Verify Key Assumptions</h3>
+            <p>For significant decisions, verify key assumptions with a financial professional:</p>
+            <ul>
+                <li>State tax treatment of retirement income</li>
+                <li>Early withdrawal penalty exceptions</li>
+                <li>Impact on other benefits (Social Security, Medicare)</li>
+                <li>Estate planning implications</li>
+            </ul>
+        </div>
+        
+        <h2>🤝 When to Consult a Professional</h2>
+        
+        <p>Consider professional advice when:</p>
+        <ul>
+            <li><strong>Large amounts:</strong> Withdrawals over $50,000</li>
+            <li><strong>Complex situations:</strong> Multiple account types, state moves, early retirement</li>
+            <li><strong>Tax optimization:</strong> High-income situations with complex deductions</li>
+            <li><strong>Estate planning:</strong> Inheritance or beneficiary considerations</li>
+            <li><strong>Benefit impacts:</strong> Potential effects on Social Security or Medicare</li>
+        </ul>
+        
+        <div class="nav-links">
+            <a href="docs.html">Back to Documentation</a>
+            <a href="index.html">Try Calculator</a>
+        </div>
+    </div>
+</body>
+</html>
