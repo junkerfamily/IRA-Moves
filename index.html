@@ -255,6 +255,7 @@
         .calc-explanation.show {display:block;}
         .calc-link {cursor:pointer; text-decoration:underline; opacity:0.9;}
         .calc-link:hover {opacity:1; color:#FFE5B4;}
+        .filing-status-note {font-weight: normal; color: #666;}
     </style>
 </head>
 <body>
@@ -285,21 +286,21 @@
                 <input type="number" id="taxableIncome" min="0">
             </div>
             <div class="form-group">
-                <label for="filingStatus">Filing Status</label>
-                <select id="filingStatus">
-                    <option value="single">Single</option>
-                    <option value="marriedJoint">Married Filing Jointly</option>
-                    <option value="headOfHousehold">Head of Household</option>
-                    <option value="marriedSeparate">Married Filing Separately</option>
-                </select>
-            </div>
-            <div class="form-group">
                 <label for="accountType">Retirement Account Type</label>
                 <select id="accountType">
                     <option value="traditional">Traditional 401(k)/403(b) (Pre-tax)</option>
                     <option value="roth">Roth IRA (After-tax)</option>
                 </select>
                 <small class="panel-note">Traditional accounts are taxed on withdrawal; Roth contributions can be withdrawn tax-free and penalty-free at any time.</small>
+            </div>
+            <div class="form-group" id="filingStatusGroup">
+                <label for="filingStatus">Filing Status <span id="filingStatusNote" class="hidden filing-status-note">(less critical for Roth)</span></label>
+                <select id="filingStatus">
+                    <option value="single">Single</option>
+                    <option value="marriedJoint">Married Filing Jointly</option>
+                    <option value="headOfHousehold">Head of Household</option>
+                    <option value="marriedSeparate">Married Filing Separately</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="retirementBalance">Available for Withdrawal ($)</label>
@@ -1201,15 +1202,20 @@
             const penaltyLabel = document.getElementById('penaltyLabel');
             const penaltyDescription = document.getElementById('penaltyDescription');
             const autoWithdrawNote = document.getElementById('autoWithdrawNote');
+            const filingStatusNote = document.getElementById('filingStatusNote');
             
             if (accountType === 'roth') {
                 // Hide penalty options for Roth
                 penaltyContainer.style.display = 'none';
                 autoWithdrawNote.textContent = 'Automatically sizes the withdrawal to cover loan allocations. No taxes or penalties on Roth contribution withdrawals.';
+                // Show note that filing status is less critical for Roth
+                if (filingStatusNote) filingStatusNote.classList.remove('hidden');
             } else {
                 // Show penalty options for Traditional
                 penaltyContainer.style.display = 'block';
                 autoWithdrawNote.textContent = 'Automatically sizes the pre-tax withdrawal to cover loan allocations after tax and penalties. Prevents oversized withdrawals and inflated foregone-growth penalties.';
+                // Hide the filing status note for traditional accounts
+                if (filingStatusNote) filingStatusNote.classList.add('hidden');
             }
         }
 
