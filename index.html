@@ -489,6 +489,7 @@
         
         let loans = [];
         let loanCounter = 0;
+        let currentScenarioName = null; // Track currently loaded scenario
         
         function addLoan(preventFocus = false) {
             const loanId = 'loan_' + loanCounter++;
@@ -1228,7 +1229,13 @@
 
         // Scenario Management
         function saveScenario() {
-            const name = prompt("Enter a name for this scenario:");
+            // Default to current scenario name if one is loaded
+            const defaultName = currentScenarioName || "";
+            const promptMessage = currentScenarioName 
+                ? `Update scenario "${currentScenarioName}" or enter a new name:`
+                : "Enter a name for this scenario:";
+            
+            const name = prompt(promptMessage, defaultName);
             if (!name) return;
 
             const scenario = {
@@ -1261,8 +1268,14 @@
             };
 
             localStorage.setItem(`scenario_${name}`, JSON.stringify(scenario));
-            alert(`Scenario "${name}" saved!`);
+            const wasUpdate = currentScenarioName === name;
+            currentScenarioName = name; // Update current scenario tracking
+            alert(`Scenario "${name}" ${wasUpdate ? 'updated' : 'saved'}!`);
             loadScenarioList();
+            
+            // Update the dropdown to show the current scenario as selected
+            const select = document.getElementById('scenarioSelect');
+            if (select) select.value = name;
         }
 
         function loadScenarioList() {
@@ -1353,6 +1366,9 @@
             updateAccountTypeUI();
             updateCalculator();
             
+            // Track the currently loaded scenario
+            currentScenarioName = name;
+            
             // Ensure Roth display is updated after scenario load
             setTimeout(() => {
                 updateRothDisplay();
@@ -1361,6 +1377,11 @@
 
         // Missing helper functions
         function resetApp() {
+            // Clear current scenario tracking
+            currentScenarioName = null;
+            const select = document.getElementById('scenarioSelect');
+            if (select) select.value = '';
+            
             document.getElementById('taxableIncome').value = '';
             document.getElementById('filingStatus').value = 'single';
             document.getElementById('accountType').value = 'traditional';
