@@ -924,6 +924,9 @@
             const netWealthImpact = totalInterestSaved - additionalTax - earlyPenalty - futureValueLost + (rothRedirectEnabled ? rothFutureValue : 0);
             mainHtml += `<div class=\"metric\"><span><strong>Net ${projectionYears}-Year Impact (All Factors):</strong></span><span class=\"metric-value\"><strong>${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString()}</strong></span></div>`;
 
+
+            //Add Comment
+        
             // Tax rate breakdown
             if (withdrawal > 0) {
                 let marginalFederal = 0;
