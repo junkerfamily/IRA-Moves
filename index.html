@@ -331,6 +331,13 @@
                 <label for="withdrawalSlider">Retirement Withdrawal Amount: $<span id="withdrawalAmount">0</span></label>
                 <input type="range" id="withdrawalSlider" class="slider" min="0" max="100000" value="0" step="100">
             </div>
+            <div class="form-group">
+                <label class="inline-flex">
+                    <input type="checkbox" id="autoWithdrawCheck" class="mr-6">
+                    <strong>Only withdraw what's needed for selected paydowns</strong>
+                </label>
+                <small class="roth-note">Automatically sizes the pre-tax withdrawal to cover loan allocations after tax and penalties. Prevents oversized withdrawals and inflated foregone-growth penalties.</small>
+            </div>
             <div class="form-group penalty-box" id="earlyPenaltyContainer">
                 <label class="inline-flex">
                     <input type="checkbox" id="earlyPenaltyCheck"> <strong>Apply 10% Early Withdrawal Penalty (Under age 59½)</strong> <span title="If you are 59½ or older, leave this off.">ℹ️</span>
@@ -352,6 +359,13 @@
                 <div id="rothRedirectOptions" class="hidden mt-15">
                     <label>Monthly amount to redirect to Roth IRA: $<span id="rothRedirectAmount">0</span> (<span id="rothRedirectPercent">0</span>% of loan payments)</label>
                     <input type="range" id="rothRedirectSlider" class="slider" min="0" max="1000" value="0" step="10">
+                    <div class="mt-10">
+                        <label class="inline-flex">
+                            <input type="checkbox" id="rothTermRemaining" class="mr-6">
+                            <strong>Only redirect for remaining loan term</strong>
+                        </label>
+                        <small class="roth-note">Contributions stop when the originally scheduled payments would have ended, then continue compounding until the projection horizon.</small>
+                    </div>
                     <small class="roth-note">
                         <em>Note: This calculates the future value of redirecting loan payments into a Roth IRA with the same expected return.</em>
                     </small>
@@ -512,6 +526,30 @@
             }
             return { months, interest, payments };
         }
+            // Detailed amortization schedule returning per-month interest array
+            function amortizationSchedule(principal, monthlyRate, payment) {
+                const interests = [];
+                if (principal <= 0) return interests;
+                if (monthlyRate === 0) {
+                    if (payment <= 0) return interests;
+                    let bal = principal;
+                    while (bal > 0 && interests.length < 1000) {
+                        const principalPortion = Math.min(payment, bal);
+                        interests.push(0);
+                        bal -= principalPortion;
+                    }
+                    return interests;
+                }
+                if (payment <= principal * monthlyRate) return interests; // negative amortization unsupported
+                let bal = principal;
+                while (bal > 0 && interests.length < 1000) {
+                    const interestPortion = bal * monthlyRate;
+                    const principalPortion = Math.min(payment - interestPortion, bal);
+                    interests.push(interestPortion);
+                    bal -= principalPortion;
+                }
+                return interests;
+            }
 
         let lastLoanSliderChanged = null; // track last adjusted loan slider for constraint logic
     let loanBreakdownCollapsed = false; // persist breakdown toggle state across renders
@@ -600,13 +638,21 @@
             }
         }
         
-        function calculateResults() {
+    let lastFreedMonthly = 0; // tracks max available to redirect
+
+    function calculateResults() {
             const grossIncome = parseFloat(document.getElementById('taxableIncome').value) || 0;
             const filingStatus = document.getElementById('filingStatus').value;
             const retirementBalance = parseFloat(document.getElementById('retirementBalance').value) || 0;
             const expectedReturn = parseFloat(document.getElementById('expectedReturn').value) / 100 || 0.07;
-            const withdrawal = parseFloat(document.getElementById('withdrawalSlider').value) || 0;
+            let withdrawal = parseFloat(document.getElementById('withdrawalSlider').value) || 0;
             const projectionYears = parseInt(document.getElementById('projectionYears')?.value || '10', 10);
+            const contribMonths = projectionYears * 12; // full-horizon months
+            // Roth redirect inputs (we'll compute contributions after we know paid-off loans)
+            const rothRedirectEnabled = document.getElementById('rothRedirectCheck').checked;
+            const rothMonthlyAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
+            let rothFutureValue = 0;
+            let rothContributions = 0;
             const applyStd = document.getElementById('applyStandardDeduction').checked;
             const itemizedValue = parseFloat(document.getElementById('itemizedDeduction').value) || 0;
             const age65Mode = document.getElementById('age65Addl').value;
@@ -626,6 +672,36 @@
                 }
             });
 
+            // Auto-withdraw logic: size withdrawal to exactly fund allocations after tax/penalty
+            const autoWithdraw = document.getElementById('autoWithdrawCheck')?.checked;
+            if (autoWithdraw) {
+                const targetAfterTax = totalLoanPayments;
+                const maxW = retirementBalance;
+                const tol = 0.01;
+                let lo = 0, hi = maxW, best = 0;
+                const afterTaxFor = (w) => {
+                    const base = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
+                    const aft = computeTaxable(grossIncome + w, filingStatus, applyStd, itemizedValue, age65Mode);
+                    const currTax = calculateTax(base.taxable, filingStatus);
+                    const newTaxV = calculateTax(aft.taxable, filingStatus);
+                    const addFed = newTaxV - currTax;
+                    const addState = w * stateTaxRate;
+                    const penalty = (document.getElementById('earlyPenaltyCheck')?.checked) ? w * 0.10 : 0;
+                    return w - (addFed + addState) - penalty;
+                };
+                for (let i = 0; i < 40; i++) {
+                    const mid = (lo + hi) / 2;
+                    const aft = afterTaxFor(mid);
+                    if (aft >= targetAfterTax) { best = mid; hi = mid; } else { lo = mid; }
+                    if (hi - lo < tol) break;
+                }
+                withdrawal = Math.min(best, retirementBalance);
+                // Reflect in UI
+                const wSlider = document.getElementById('withdrawalSlider');
+                if (wSlider) wSlider.value = withdrawal;
+                document.getElementById('withdrawalAmount').textContent = withdrawal.toLocaleString();
+            }
+
             // Taxable income modeling
             const baseTaxable = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
             const afterTaxable = computeTaxable(grossIncome + withdrawal, filingStatus, applyStd, itemizedValue, age65Mode);
@@ -644,8 +720,8 @@
             // After-tax cash
             const afterTaxWithdrawal = withdrawal - additionalTax - earlyPenalty;
 
-            // Enforce after-tax cash constraint against selected loan allocations
-            if (totalLoanPayments > afterTaxWithdrawal && lastLoanSliderChanged) {
+            // Enforce after-tax cash constraint against selected loan allocations (skip if auto-withdraw is on)
+            if (!autoWithdraw && totalLoanPayments > afterTaxWithdrawal && lastLoanSliderChanged) {
                 const overflow = totalLoanPayments - afterTaxWithdrawal;
                 const slider = document.getElementById(`${lastLoanSliderChanged}_paymentSlider`);
                 if (slider) {
@@ -670,16 +746,13 @@
             const futureValueLost = withdrawal * Math.pow(1 + expectedReturn, projectionYears);
 
             // Roth redirect future value (only from monthly redirected payments)
-            const rothRedirectEnabled = document.getElementById('rothRedirectCheck').checked;
-            const rothMonthlyAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
-            let rothFutureValue = 0;
-            if (rothRedirectEnabled && rothMonthlyAmount > 0) {
-                const monthlyRate = expectedReturn / 12;
-                const months = projectionYears * 12;
-                rothFutureValue = monthlyRate === 0
-                    ? rothMonthlyAmount * months
-                    : rothMonthlyAmount * (Math.pow(1 + monthlyRate, months) - 1) / monthlyRate;
+            // Ensure the options panel visibility matches the checkbox state
+            const rothOptionsPanel = document.getElementById('rothRedirectOptions');
+            if (rothOptionsPanel) {
+                if (rothRedirectEnabled) rothOptionsPanel.classList.remove('hidden');
+                else rothOptionsPanel.classList.add('hidden');
             }
+            // Defer actual Roth contribution math until after loan payoff pass
 
             // Loan payoff impact simulation
             let totalInterestSaved = 0;
@@ -733,13 +806,82 @@
                 }
                 updateRothDisplay();
             }
+            lastFreedMonthly = freedMonthlyPayments;
 
             // Compose results HTML
             const resultsContent = document.getElementById('resultsContent');
-            const immediateImpact = totalInterestSaved - additionalTax - earlyPenalty;
-            const netWealthImpact = totalInterestSaved - additionalTax - earlyPenalty - futureValueLost + (rothRedirectEnabled ? rothFutureValue : 0);
-
             let mainHtml = '';
+            const immediateCashImpact = - (additionalTax + earlyPenalty);
+
+            // Compute Roth contributions and FV now that we know which loans were fully paid
+            if (rothRedirectEnabled && rothMonthlyAmount > 0) {
+                const monthlyRate = expectedReturn / 12;
+                const totalHorizonMonths = contribMonths;
+                const remainingTermMode = document.getElementById('rothTermRemaining')?.checked;
+                if (remainingTermMode) {
+                    // Build per-month available redirect based on each fully-paid loan's original schedule
+                    const paidLoans = lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance === 0 && lb.originalMonths > 0);
+                    const maxMonths = paidLoans.reduce((m, lb) => Math.max(m, lb.originalMonths || 0), 0);
+                    const avail = new Array(maxMonths).fill(0);
+                    paidLoans.forEach(lb => {
+                        for (let m = 0; m < (lb.originalMonths || 0); m++) avail[m] += (lb.monthlyPayment || 0);
+                    });
+                    let fv = 0;
+                    let contribSum = 0;
+                    for (let m = 0; m < maxMonths; m++) {
+                        const c = Math.min(rothMonthlyAmount, avail[m] || 0);
+                        contribSum += c;
+                        if (monthlyRate === 0) {
+                            fv += c;
+                        } else {
+                            fv = fv * (1 + monthlyRate) + c;
+                        }
+                    }
+                    // Grow remaining months to the full projection horizon
+                    if (monthlyRate > 0 && totalHorizonMonths > maxMonths) {
+                        fv *= Math.pow(1 + monthlyRate, totalHorizonMonths - maxMonths);
+                    }
+                    rothContributions = contribSum;
+                    rothFutureValue = fv;
+                } else {
+                    // Full-horizon constant contribution (capped by freed monthly at month 1 via slider max)
+                    rothContributions = rothMonthlyAmount * totalHorizonMonths;
+                    rothFutureValue = monthlyRate === 0
+                        ? rothMonthlyAmount * totalHorizonMonths
+                        : rothMonthlyAmount * (Math.pow(1 + monthlyRate, totalHorizonMonths) - 1) / monthlyRate;
+                }
+            }
+
+            // Compute breakeven and next-12-months interest avoided
+            let interestDiffTimeline = [];
+            loans.forEach(loanId => {
+                const balance = parseFloat(document.getElementById(`${loanId}_balance`).value) || 0;
+                const rateMonthly = (parseFloat(document.getElementById(`${loanId}_rate`).value) || 0) / 100 / 12;
+                const monthlyPayment = parseFloat(document.getElementById(`${loanId}_payment`).value) || 0;
+                const slider = document.getElementById(`${loanId}_paymentSlider`);
+                const lumpApplied = slider ? (parseFloat(slider.value) || 0) : 0;
+                if (balance <= 0 || monthlyPayment <= 0 || lumpApplied <= 0) return;
+                const orig = amortizationSchedule(balance, rateMonthly, monthlyPayment);
+                const newBal = Math.max(0, balance - lumpApplied);
+                const alt = newBal > 0 ? amortizationSchedule(newBal, rateMonthly, monthlyPayment) : [];
+                const maxLen = Math.max(orig.length, alt.length);
+                for (let i = 0; i < maxLen; i++) {
+                    const d = (orig[i] || 0) - (alt[i] || 0);
+                    interestDiffTimeline[i] = (interestDiffTimeline[i] || 0) + Math.max(0, d);
+                }
+            });
+            const next12InterestAvoided = interestDiffTimeline.slice(0,12).reduce((a,b)=>a+b,0);
+            let taxesPenalties = additionalTax + earlyPenalty;
+            let breakevenMonths = null;
+            if (interestDiffTimeline.length > 0) {
+                let cum = 0;
+                for (let i = 0; i < interestDiffTimeline.length; i++) {
+                    cum += interestDiffTimeline[i];
+                    if (cum + 1e-6 >= taxesPenalties) { breakevenMonths = i+1; break; }
+                }
+            }
+            // Defer rendering of these values until after the base metrics block
+
             mainHtml += `<div class=\"metric\"><span>Retirement Withdrawal:</span><span class=\"metric-value\">$${withdrawal.toLocaleString()}</span></div>`;
             if (applyStd || itemizedValue>0) mainHtml += `<div class=\"metric\"><span>Deduction Used:</span><span class=\"metric-value\">$${baseTaxable.deductionUsed.toLocaleString()}</span></div>`;
             mainHtml += `<div class=\"metric\" title=\"Federal bracket-based + flat state tax on full withdrawal\"><span>Total Additional Tax (Fed + State):</span><span class=\"metric-value\">$${additionalTax.toLocaleString()}</span></div>`;
@@ -751,10 +893,35 @@
             mainHtml += `<div class=\"metric\"><span>Remaining Cash:</span><span class=\"metric-value\">$${remainingCash.toLocaleString()}</span></div>`;
             mainHtml += `<div class=\"metric\"><span>New Retirement Balance:</span><span class=\"metric-value\">$${newRetirementBalance.toLocaleString()}</span></div>`;
             mainHtml += `<hr style=\"border-color: rgba(255,255,255,0.3);\">`;
-            mainHtml += `<div class=\"metric\"><span>Estimated Interest Saved:</span><span class=\"metric-value\">$${totalInterestSaved.toLocaleString()}</span></div>`;
-            mainHtml += `<div class=\"metric impact-immediate\"><span><strong>Immediate Impact (After Taxes):</strong></span><span class=\"metric-value\"><strong>${immediateImpact >= 0 ? '+' : ''}$${immediateImpact.toLocaleString()}</strong></span></div>`;
+            mainHtml += `<div class=\"metric\"><span>Estimated Interest Saved (lifetime, nominal):</span><span class=\"metric-value\">$${totalInterestSaved.toLocaleString()}</span></div>`;
+            mainHtml += `<div class=\"metric\"><span>Immediate Cash Impact (today, taxes/penalties only):</span><span class=\"metric-value\">$${immediateCashImpact.toLocaleString()}</span></div>`;
+            taxesPenalties = additionalTax + earlyPenalty;
+            mainHtml += `<div class=\"metric\"><span>Net Savings vs Taxes (no growth, lifetime):</span><span class=\"metric-value\">${(totalInterestSaved - taxesPenalties) >= 0 ? '+' : ''}$${(totalInterestSaved - taxesPenalties).toLocaleString()}</span></div>`;
+            if (next12InterestAvoided > 0) mainHtml += `<div class=\"metric\"><span>Interest avoided next 12 months:</span><span class=\"metric-value\">$${next12InterestAvoided.toLocaleString()}</span></div>`;
+            if (breakevenMonths != null) mainHtml += `<div class=\"metric\"><span>Breakeven time (no growth):</span><span class=\"metric-value\">${breakevenMonths} month${breakevenMonths===1?'':'s'}</span></div>`;
+            // Oversize-withdrawal warning if withdrawal dwarfs loan allocation and auto-withdraw is off
+            if (!autoWithdraw && totalLoanPayments > 0 && withdrawal > totalLoanPayments * 2) {
+                const ratio = (withdrawal / (totalLoanPayments || 1)).toFixed(1);
+                mainHtml += `<div class=\"warning\"><strong>Warning:</strong> You're withdrawing $${withdrawal.toLocaleString()} to fund $${totalLoanPayments.toLocaleString()} in paydowns (≈${ratio}×). Consider enabling \"Only withdraw what's needed\" to avoid excessive foregone growth.</div>`;
+            }
             mainHtml += `<div class=\"metric\"><span>Foregone Growth on Withdrawal (${projectionYears} yrs):</span><span class=\"metric-value\">-$${futureValueLost.toLocaleString()}</span></div>`;
-            if (rothRedirectEnabled) mainHtml += `<div class=\"metric impact-roth\"><span>Roth IRA Future Value (${projectionYears} yrs):</span><span class=\"metric-value\">+$${rothFutureValue.toLocaleString()}</span></div>`;
+            if (rothRedirectEnabled) {
+                const remainingTermMode = document.getElementById('rothTermRemaining')?.checked;
+                if (remainingTermMode) {
+                    const paidLoans = lastLoanBreakdownRows.filter(lb => !lb.warning && lb.newBalance === 0 && lb.originalMonths > 0);
+                    const maxMonths = paidLoans.reduce((m, lb) => Math.max(m, lb.originalMonths || 0), 0);
+                    mainHtml += `<div class=\"metric impact-roth\"><span>Roth IRA Redirected Funding Amount (remaining term: up to ${maxMonths} mo at $${(rothMonthlyAmount||0).toLocaleString()}/mo):</span><span class=\"metric-value\">$${(rothContributions||0).toLocaleString()}</span></div>`;
+                } else {
+                    mainHtml += `<div class=\"metric impact-roth\"><span>Roth IRA Redirected Funding Amount (${projectionYears} yrs: $${(rothMonthlyAmount||0).toLocaleString()}/mo × ${contribMonths} mo):</span><span class=\"metric-value\">$${(rothContributions||0).toLocaleString()}</span></div>`;
+                }
+                mainHtml += `<div class=\"metric impact-roth\"><span>Roth IRA Future Value (${projectionYears} yrs):</span><span class=\"metric-value\">+$${rothFutureValue.toLocaleString()}</span></div>`;
+                if ((lastFreedMonthly || 0) === 0) {
+                    mainHtml += `<div class=\"tax-info\"><strong>Why $0?</strong> Roth redirection only uses monthly payments from loans you completely pay off. No loans were fully paid, so there's no monthly cashflow to redirect.</div>`;
+                } else if (rothMonthlyAmount === 0) {
+                    mainHtml += `<div class=\"tax-info\">Set a monthly redirect above $0 (up to $${(lastFreedMonthly||0).toLocaleString()}) to see projected Roth growth.</div>`;
+                }
+            }
+            const netWealthImpact = totalInterestSaved - additionalTax - earlyPenalty - futureValueLost + (rothRedirectEnabled ? rothFutureValue : 0);
             mainHtml += `<div class=\"metric\"><span><strong>Net ${projectionYears}-Year Impact (All Factors):</strong></span><span class=\"metric-value\"><strong>${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString()}</strong></span></div>`;
 
             // Tax rate breakdown
@@ -824,13 +991,21 @@
         document.getElementById('withdrawalSlider').addEventListener('input', calculateResults);
         document.getElementById('rothRedirectCheck').addEventListener('change', function() {
             const options = document.getElementById('rothRedirectOptions');
-            options.style.display = this.checked ? 'block' : 'none';
+            if (this.checked) {
+                options.classList.remove('hidden');
+            } else {
+                options.classList.add('hidden');
+            }
             calculateResults();
         });
         document.getElementById('rothRedirectSlider').addEventListener('input', function() {
             updateRothDisplay();
             calculateResults();
         });
+        const earlyPenaltyEl = document.getElementById('earlyPenaltyCheck');
+        if (earlyPenaltyEl) {
+            earlyPenaltyEl.addEventListener('change', calculateResults);
+        }
         
         ['taxableIncome', 'filingStatus', 'retirementBalance', 'expectedReturn'].forEach(id => {
             document.getElementById(id).addEventListener('input', updateCalculator);
@@ -980,6 +1155,24 @@
                     URL.revokeObjectURL(url);
                 });
             }
+        })();
+        
+        // Add listener so auto-withdraw recalculates immediately
+        const autoW = document.getElementById('autoWithdrawCheck');
+        if (autoW) {
+          autoW.addEventListener('change', calculateResults);
+        }
+        
+        // Recalc when remaining-term toggle changes
+        const rothTermChk = document.getElementById('rothTermRemaining');
+        if (rothTermChk) {
+          rothTermChk.addEventListener('change', calculateResults);
+        }
+
+        // Oversize withdrawal warning: if withdrawal >> needed for selected loan paydowns
+        (function addOversizeWarning(){
+          const results = document.getElementById('resultsContent');
+          if (!results) return;
         })();
     </script>
 </body>
