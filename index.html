@@ -686,20 +686,29 @@
             // Adjust Roth slider max based on freed monthly payments
             const rothSlider = document.getElementById('rothRedirectSlider');
             if (rothSlider) {
-                rothSlider.max = Math.max(freedMonthlyPayments, 1000); // Keep at least 1000 max for usability
-                if (parseFloat(rothSlider.value) > freedMonthlyPayments && freedMonthlyPayments > 0) {
-                    rothSlider.value = freedMonthlyPayments;
-                }
-                
-                // Auto-max functionality and disable slider when 100% redirect is checked
-                const rothMaxRedirect = document.getElementById('rothMaxRedirect')?.checked;
-                if (rothMaxRedirect && freedMonthlyPayments > 0) {
-                    rothSlider.value = freedMonthlyPayments;
+                // Disable slider if no loans are fully paid off (no freed payments)
+                if (freedMonthlyPayments <= 0) {
                     rothSlider.disabled = true;
-                    rothSlider.title = 'Slider disabled - using 100% of freed payments';
+                    rothSlider.value = 0;
+                    rothSlider.max = 1000; // Keep reasonable max for UI consistency
+                    rothSlider.title = 'Disabled - no loans fully paid off yet';
                 } else {
-                    rothSlider.disabled = false;
-                    rothSlider.title = '';
+                    // Enable slider and set appropriate max
+                    rothSlider.max = Math.max(freedMonthlyPayments, 1000);
+                    if (parseFloat(rothSlider.value) > freedMonthlyPayments) {
+                        rothSlider.value = freedMonthlyPayments;
+                    }
+                    
+                    // Auto-max functionality and disable slider when 100% redirect is checked
+                    const rothMaxRedirect = document.getElementById('rothMaxRedirect')?.checked;
+                    if (rothMaxRedirect) {
+                        rothSlider.value = freedMonthlyPayments;
+                        rothSlider.disabled = true;
+                        rothSlider.title = 'Slider disabled - using 100% of freed payments';
+                    } else {
+                        rothSlider.disabled = false;
+                        rothSlider.title = '';
+                    }
                 }
                 
                 updateRothDisplay();
@@ -1211,6 +1220,230 @@
             updateCalculator();
         }
 
+        // CSV Export functionality
+        function exportToCSV() {
+            const timestamp = new Date().toLocaleString();
+            const data = [];
+            
+            // Add header with timestamp
+            data.push(['DJ\'s Retirement Fund Loan Payoff Calculator - Export']);
+            data.push(['Generated on:', timestamp]);
+            data.push(['']); // Empty row for spacing
+            
+            // Input parameters section
+            data.push(['=== INPUT PARAMETERS ===']);
+            data.push(['Parameter', 'Value']);
+            
+            // Basic inputs
+            const grossIncome = parseFloat(document.getElementById('taxableIncome').value) || 0;
+            const filingStatus = document.getElementById('filingStatus').value;
+            const accountType = document.getElementById('accountType').value;
+            const retirementBalance = parseFloat(document.getElementById('retirementBalance').value) || 0;
+            const expectedReturn = parseFloat(document.getElementById('expectedReturn').value) || 0;
+            const projectionYears = parseInt(document.getElementById('projectionYears').value) || 10;
+            const stateTaxRate = parseFloat(document.getElementById('stateTaxRate').value) || 0;
+            const withdrawal = parseFloat(document.getElementById('withdrawalSlider').value) || 0;
+            
+            data.push(['Annual Gross Income', '$' + grossIncome.toLocaleString()]);
+            data.push(['Filing Status', filingStatus.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())]);
+            data.push(['Account Type', accountType === 'roth' ? 'Roth IRA' : 'Traditional 401(k)/403(b)']);
+            data.push(['Available for Withdrawal', '$' + retirementBalance.toLocaleString()]);
+            data.push(['Expected Annual Return', expectedReturn.toFixed(1) + '%']);
+            data.push(['Projection Time Horizon', projectionYears + ' years']);
+            data.push(['State Income Tax Rate', stateTaxRate.toFixed(1) + '%']);
+            data.push(['Retirement Withdrawal Amount', '$' + withdrawal.toLocaleString()]);
+            
+            // Tax settings
+            const applyStd = document.getElementById('applyStandardDeduction').checked;
+            const itemizedValue = parseFloat(document.getElementById('itemizedDeduction').value) || 0;
+            const age65Mode = document.getElementById('age65Addl').value;
+            const earlyPenalty = document.getElementById('earlyPenaltyCheck').checked;
+            const autoWithdraw = document.getElementById('autoWithdrawCheck').checked;
+            
+            data.push(['Apply Standard Deduction', applyStd ? 'Yes' : 'No']);
+            if (itemizedValue > 0) data.push(['Itemized Deduction', '$' + itemizedValue.toLocaleString()]);
+            if (age65Mode !== 'none') data.push(['Age 65+ Adjustment', age65Mode]);
+            data.push(['Early Withdrawal Penalty Applied', earlyPenalty ? 'Yes' : 'No']);
+            data.push(['Auto-size Withdrawal', autoWithdraw ? 'Yes' : 'No']);
+            
+            // Market timing
+            const marketTiming = document.getElementById('marketTimingEnabled').checked;
+            if (marketTiming) {
+                const correctionPct = parseFloat(document.getElementById('marketCorrectionPct').value) || 0;
+                const recoveryYears = parseFloat(document.getElementById('recoveryTimeYears').value) || 0;
+                data.push(['Market Correction Scenario', 'Enabled']);
+                data.push(['Expected Market Correction', correctionPct + '%']);
+                data.push(['Recovery Time', recoveryYears + ' years']);
+            } else {
+                data.push(['Market Correction Scenario', 'Disabled']);
+            }
+            
+            // Roth redirect
+            const rothRedirect = document.getElementById('rothRedirectCheck').checked;
+            if (rothRedirect) {
+                const rothAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
+                const rothMax = document.getElementById('rothMaxRedirect').checked;
+                const rothTerm = document.getElementById('rothTermRemaining').checked;
+                data.push(['Roth IRA Redirect', 'Enabled']);
+                data.push(['Monthly Roth Redirect Amount', '$' + rothAmount.toLocaleString()]);
+                data.push(['Redirect 100% of Freed Payments', rothMax ? 'Yes' : 'No']);
+                data.push(['Only Redirect for Remaining Term', rothTerm ? 'Yes' : 'No']);
+            } else {
+                data.push(['Roth IRA Redirect', 'Disabled']);
+            }
+            
+            data.push(['']); // Empty row
+            
+            // Loans section
+            data.push(['=== LOAN DETAILS ===']);
+            if (loans.length > 0) {
+                data.push(['Loan', 'Purpose', 'Balance', 'Rate', 'Monthly Payment', 'Paydown Amount']);
+                loans.forEach((loanId, index) => {
+                    const purpose = document.getElementById(`${loanId}_purpose`).value || 'Loan ' + (index + 1);
+                    const balance = parseFloat(document.getElementById(`${loanId}_balance`).value) || 0;
+                    const rate = parseFloat(document.getElementById(`${loanId}_rate`).value) || 0;
+                    const payment = parseFloat(document.getElementById(`${loanId}_payment`).value) || 0;
+                    const slider = document.getElementById(`${loanId}_paymentSlider`);
+                    const paydown = slider ? (parseFloat(slider.value) || 0) : 0;
+                    
+                    data.push([
+                        index + 1,
+                        purpose,
+                        '$' + balance.toLocaleString(),
+                        rate.toFixed(2) + '%',
+                        '$' + payment.toLocaleString(),
+                        '$' + paydown.toLocaleString()
+                    ]);
+                });
+            } else {
+                data.push(['No loans entered']);
+            }
+            
+            data.push(['']); // Empty row
+            
+            // Only include results if calculations have been performed
+            if (loans.length > 0 && withdrawal > 0) {
+                // Results section - we need to recalculate key metrics
+                data.push(['=== CALCULATED RESULTS ===']);
+                data.push(['Metric', 'Value', 'Description']);
+                
+                // Recalculate key results for export
+                const accountTypeName = accountType === 'roth' ? 'Roth IRA' : 'Traditional Retirement Account';
+                
+                // Tax calculations
+                let additionalTax = 0;
+                let earlyPenaltyAmount = 0;
+                let afterTaxWithdrawal = withdrawal;
+                
+                if (accountType === 'traditional') {
+                    const baseTaxable = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
+                    const afterTaxable = computeTaxable(grossIncome + withdrawal, filingStatus, applyStd, itemizedValue, age65Mode);
+                    const currentTax = calculateTax(baseTaxable.taxable, filingStatus);
+                    const newTax = calculateTax(afterTaxable.taxable, filingStatus);
+                    const additionalTaxFederal = newTax - currentTax;
+                    const additionalTaxState = withdrawal * (stateTaxRate / 100);
+                    additionalTax = additionalTaxFederal + additionalTaxState;
+                    earlyPenaltyAmount = earlyPenalty ? withdrawal * 0.10 : 0;
+                    afterTaxWithdrawal = withdrawal - additionalTax - earlyPenaltyAmount;
+                }
+                
+                // Loan calculations
+                let totalInterestSaved = 0;
+                let freedMonthlyPayments = 0;
+                let totalLoanPayments = 0;
+                
+                loans.forEach(loanId => {
+                    const balance = parseFloat(document.getElementById(`${loanId}_balance`).value) || 0;
+                    const rateMonthly = (parseFloat(document.getElementById(`${loanId}_rate`).value) || 0) / 100 / 12;
+                    const monthlyPayment = parseFloat(document.getElementById(`${loanId}_payment`).value) || 0;
+                    const slider = document.getElementById(`${loanId}_paymentSlider`);
+                    const lumpApplied = slider ? (parseFloat(slider.value) || 0) : 0;
+                    totalLoanPayments += lumpApplied;
+                    
+                    if (balance > 0 && monthlyPayment > 0) {
+                        const newBalance = Math.max(0, balance - lumpApplied);
+                        const originalA = amortizationSummary(balance, rateMonthly, monthlyPayment);
+                        let newA = { months: 0, interest: 0, payments: 0 };
+                        if (newBalance > 0) {
+                            newA = amortizationSummary(newBalance, rateMonthly, monthlyPayment);
+                        }
+                        const interestSaved = Math.max(0, originalA.interest - newA.interest);
+                        totalInterestSaved += interestSaved;
+                        if (newBalance < 0.01) freedMonthlyPayments += monthlyPayment;
+                    }
+                });
+                
+                const remainingCash = afterTaxWithdrawal - totalLoanPayments;
+                const newRetirementBalance = retirementBalance - withdrawal;
+                const futureValueLost = withdrawal * Math.pow(1 + expectedReturn / 100, projectionYears);
+                
+                // Output key results
+                data.push([accountTypeName + ' Withdrawal', '$' + withdrawal.toLocaleString(), 'Amount withdrawn from retirement account']);
+                if (accountType === 'traditional') {
+                    data.push(['Total Additional Tax', '$' + additionalTax.toLocaleString(), 'Federal and state taxes on withdrawal']);
+                    if (earlyPenaltyAmount > 0) {
+                        data.push(['Early Withdrawal Penalty', '$' + earlyPenaltyAmount.toLocaleString(), '10% penalty for withdrawal before age 59½']);
+                    }
+                }
+                data.push(['Cash Available for Loans', '$' + afterTaxWithdrawal.toLocaleString(), 'After-tax amount available for loan payments']);
+                data.push(['Applied to Loans', '$' + totalLoanPayments.toLocaleString(), 'Total amount allocated to loan paydowns']);
+                data.push(['Remaining Cash', '$' + remainingCash.toLocaleString(), 'Leftover cash after loan payments']);
+                data.push(['New Retirement Balance', '$' + newRetirementBalance.toLocaleString(), 'Retirement account balance after withdrawal']);
+                data.push(['Total Interest Saved', '$' + totalInterestSaved.toLocaleString(), 'Interest avoided over life of loans']);
+                data.push(['Foregone Growth (' + projectionYears + ' years)', '$' + futureValueLost.toLocaleString(), 'Potential growth lost on withdrawn amount']);
+                
+                const netImpact = totalInterestSaved - additionalTax - earlyPenaltyAmount - futureValueLost;
+                data.push(['Net ' + projectionYears + '-Year Impact', (netImpact >= 0 ? '+$' : '$') + netImpact.toLocaleString(), 'Overall financial impact including all factors']);
+                
+                if (freedMonthlyPayments > 0) {
+                    data.push(['Monthly Payments Freed', '$' + freedMonthlyPayments.toLocaleString(), 'Monthly cashflow from fully paid-off loans']);
+                }
+                
+                // Loan breakdown details
+                if (lastLoanBreakdownRows && lastLoanBreakdownRows.length > 0) {
+                    data.push(['']); // Empty row
+                    data.push(['=== LOAN BREAKDOWN DETAILS ===']);
+                    data.push(['Loan', 'Original Balance', 'Paydown', 'New Balance', 'Interest Saved', 'Months Saved']);
+                    
+                    lastLoanBreakdownRows.forEach(lb => {
+                        if (!lb.warning) {
+                            data.push([
+                                lb.purpose,
+                                '$' + lb.balance.toLocaleString(),
+                                '$' + lb.paymentMade.toLocaleString(),
+                                '$' + lb.newBalance.toLocaleString(),
+                                '$' + lb.interestSaved.toLocaleString(),
+                                lb.monthsSaved.toLocaleString()
+                            ]);
+                        }
+                    });
+                }
+            }
+            
+            // Convert to CSV format
+            const csvContent = data.map(row => 
+                row.map(cell => {
+                    // Escape cells that contain commas, quotes, or newlines
+                    const cellStr = String(cell || '');
+                    if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                        return '"' + cellStr.replace(/"/g, '""') + '"';
+                    }
+                    return cellStr;
+                }).join(',')
+            ).join('\n');
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `retirement_loan_payoff_analysis_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         // Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
             // Set initial focus on Annual Gross Income field
@@ -1323,6 +1556,12 @@
             const earlyPenaltyCheck = document.getElementById('earlyPenaltyCheck');
             if (earlyPenaltyCheck) {
                 earlyPenaltyCheck.addEventListener('change', calculateResults);
+            }
+
+            // CSV Export button
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            if (exportCsvBtn) {
+                exportCsvBtn.addEventListener('click', exportToCSV);
             }
         });
 

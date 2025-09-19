@@ -1,4 +1,4 @@
-Here are the handful of usabildone - Roth redirect slider – Max defaults to at least 1000 even if freed payments are $0; could confuse ("why can I set $500 if nothing's freed?"). Maybe disable until ≥1 loan fully paid. ADDED: "Redirect 100% of freed payments" checkbox that defaults to checked for Roth accounts.ty questions / observations worth a quick look:
+Hedone - Export CSV button – Idone - Roth redirect slider – Max defaults to at least 1000 even if freed payments are $0; could confuse ("why can I set $500 if nothing's freed?"). Maybe disable until ≥1 loan fully paid.don't see any click handler wired to exportCsvBtn. Should it do something yet?e are the handful of usabildone - Roth redirect slider – Max defaults to at least 1000 even if freed payments are $0; could confuse ("why can I set $500 if nothing's freed?"). Maybe disable until ≥1 loan fully paid. ADDED: "Redirect 100% of freed payments" checkbox that defaults to checked for Roth accounts.ty questions / observations worth a quick look:
 
 Export CSV button – I don’t see any click handler wired to exportCsvBtn. Should it do something yet?
 
