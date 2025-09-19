@@ -445,12 +445,12 @@
                 const sliderDiv = document.createElement('div');
                 sliderDiv.className = 'slider-container';
                 sliderDiv.innerHTML = `
-                    <label>Pay towards ${purpose}: $<span id="${loanId}_paymentAmount">${balance.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></label>
-                    <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="${balance}" step="1">
+                    <label>Pay towards ${purpose}: $<span id="${loanId}_paymentAmount">0</span></label>
+                    <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="0" step="1">
                 `;
                 slidersDiv.appendChild(sliderDiv);
                 
-                document.getElementById(`${loanId}_paymentSlider`).addEventListener('input', (e) => { lastLoanSliderChanged = loanId; calculateResults(); });
+                document.getElementById(`${loanId}_paymentSlider`).addEventListener('input', (e) => { lastLoanSliderChanged = loanId; updateLoanSliderConstraints(); calculateResults(); });
             });
             
             // Update Roth redirect slider max
@@ -571,21 +571,39 @@
             const afterTaxWithdrawal = withdrawal - additionalTax - earlyPenalty;
 
             // Enforce after-tax cash constraint against selected loan allocations (skip if auto-withdraw is on)
-            if (!autoWithdraw && totalLoanPayments > afterTaxWithdrawal && lastLoanSliderChanged) {
+            if (!autoWithdraw && totalLoanPayments > afterTaxWithdrawal) {
                 const overflow = totalLoanPayments - afterTaxWithdrawal;
-                const slider = document.getElementById(`${lastLoanSliderChanged}_paymentSlider`);
-                if (slider) {
-                    const currentVal = parseFloat(slider.value) || 0;
-                    const newVal = Math.max(0, currentVal - overflow);
-                    slider.value = newVal;
-                    document.getElementById(`${lastLoanSliderChanged}_paymentAmount`).textContent = parseFloat(newVal).toLocaleString('en-US', {maximumFractionDigits: 0});
-                    // Recompute total
-                    totalLoanPayments = 0;
+                
+                if (lastLoanSliderChanged) {
+                    // Reduce the most recently changed slider first
+                    const slider = document.getElementById(`${lastLoanSliderChanged}_paymentSlider`);
+                    if (slider) {
+                        const currentVal = parseFloat(slider.value) || 0;
+                        const reduction = Math.min(overflow, currentVal);
+                        const newVal = currentVal - reduction;
+                        slider.value = newVal;
+                        document.getElementById(`${lastLoanSliderChanged}_paymentAmount`).textContent = parseFloat(newVal).toLocaleString('en-US', {maximumFractionDigits: 0});
+                    }
+                } else {
+                    // If no specific slider was changed, proportionally reduce all sliders
+                    const reductionRatio = afterTaxWithdrawal / totalLoanPayments;
                     loans.forEach(id => {
-                        const s = document.getElementById(`${id}_paymentSlider`);
-                        if (s) totalLoanPayments += parseFloat(s.value) || 0;
+                        const slider = document.getElementById(`${id}_paymentSlider`);
+                        if (slider) {
+                            const currentVal = parseFloat(slider.value) || 0;
+                            const newVal = Math.floor(currentVal * reductionRatio);
+                            slider.value = newVal;
+                            document.getElementById(`${id}_paymentAmount`).textContent = newVal.toLocaleString('en-US', {maximumFractionDigits: 0});
+                        }
                     });
                 }
+                
+                // Recompute total after adjustments
+                totalLoanPayments = 0;
+                loans.forEach(id => {
+                    const s = document.getElementById(`${id}_paymentSlider`);
+                    if (s) totalLoanPayments += parseFloat(s.value) || 0;
+                });
             }
 
             const remainingCash = Math.max(0, afterTaxWithdrawal - totalLoanPayments);
@@ -1222,6 +1240,63 @@
             updateCalculator();
         }
 
+        // Update loan slider constraints based on available cash
+        function updateLoanSliderConstraints() {
+            const autoWithdraw = document.getElementById('autoWithdrawCheck')?.checked || false;
+            if (autoWithdraw) return; // Skip constraints when auto-withdraw is enabled
+            
+            // Calculate available after-tax cash
+            const withdrawal = parseFloat(document.getElementById('withdrawalSlider').value) || 0;
+            const grossIncome = parseFloat(document.getElementById('taxableIncome').value) || 0;
+            const filingStatus = document.getElementById('filingStatus').value;
+            const accountType = document.getElementById('accountType').value;
+            const applyStd = document.getElementById('applyStandardDeduction').checked;
+            const itemizedValue = parseFloat(document.getElementById('itemizedDeduction').value) || 0;
+            const age65Mode = document.getElementById('age65Addl').value;
+            const stateTaxRate = (parseFloat(document.getElementById('stateTaxRate').value) || 0) / 100;
+            
+            let afterTaxWithdrawal = withdrawal;
+            
+            if (accountType === 'traditional') {
+                const baseTaxable = computeTaxable(grossIncome, filingStatus, applyStd, itemizedValue, age65Mode);
+                const afterTaxable = computeTaxable(grossIncome + withdrawal, filingStatus, applyStd, itemizedValue, age65Mode);
+                const currentTax = calculateTax(baseTaxable.taxable, filingStatus);
+                const newTax = calculateTax(afterTaxable.taxable, filingStatus);
+                const additionalTaxFederal = newTax - currentTax;
+                const additionalTaxState = withdrawal * stateTaxRate;
+                const additionalTax = additionalTaxFederal + additionalTaxState;
+                const earlyPenalty = document.getElementById('earlyPenaltyCheck')?.checked ? withdrawal * 0.10 : 0;
+                afterTaxWithdrawal = withdrawal - additionalTax - earlyPenalty;
+            }
+            
+            // Get current total allocations (excluding the slider being moved)
+            let otherAllocations = 0;
+            loans.forEach(loanId => {
+                if (loanId !== lastLoanSliderChanged) {
+                    const slider = document.getElementById(`${loanId}_paymentSlider`);
+                    if (slider) {
+                        otherAllocations += parseFloat(slider.value) || 0;
+                    }
+                }
+            });
+            
+            // Update the max for the slider being moved
+            if (lastLoanSliderChanged) {
+                const changedSlider = document.getElementById(`${lastLoanSliderChanged}_paymentSlider`);
+                const balance = parseFloat(document.getElementById(`${lastLoanSliderChanged}_balance`).value) || 0;
+                if (changedSlider) {
+                    const availableForThisLoan = Math.max(0, afterTaxWithdrawal - otherAllocations);
+                    const newMax = Math.min(balance, availableForThisLoan);
+                    changedSlider.max = newMax;
+                    
+                    // If current value exceeds new max, adjust it
+                    if (parseFloat(changedSlider.value) > newMax) {
+                        changedSlider.value = newMax;
+                    }
+                }
+            }
+        }
+
         // Shrink withdrawal to needed amount
         function shrinkWithdrawalToNeeded() {
             // Calculate total loan payments currently allocated
@@ -1570,7 +1645,10 @@
 
             const withdrawalSlider = document.getElementById('withdrawalSlider');
             if (withdrawalSlider) {
-                withdrawalSlider.addEventListener('input', calculateResults);
+                withdrawalSlider.addEventListener('input', function() {
+                    updateLoanSliderConstraints(); 
+                    calculateResults();
+                });
             }
 
             const applyStandardDeduction = document.getElementById('applyStandardDeduction');
