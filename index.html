@@ -588,7 +588,7 @@
                 }
             }
 
-            const remainingCash = afterTaxWithdrawal - totalLoanPayments;
+            const remainingCash = Math.max(0, afterTaxWithdrawal - totalLoanPayments);
             document.getElementById('remainingCash').textContent = remainingCash.toLocaleString('en-US', {maximumFractionDigits: 0});
 
             // Future growth foregone (lump sum left invested)
@@ -822,7 +822,7 @@
                 mainHtml += `<div id=\"afterTaxCalc\" class=\"calc-explanation\">Roth Withdrawal ($${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})}) - Taxes ($0) - Penalties ($0) = $${afterTaxWithdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})} available for loan payments. Full withdrawal amount is available since Roth contributions are tax-free.</div>`;
             }
             mainHtml += `<div class=\"metric\"><span>Applied to Loans:</span><span class=\"metric-value\">$${totalLoanPayments.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
-            mainHtml += `<div class=\"metric\"><span>Remaining Cash:</span><span class=\"metric-value\">$${remainingCash.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
+            mainHtml += `<div class=\"metric\"><span>Remaining Cash:</span><span class=\"metric-value\">$${Math.max(0, remainingCash).toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
             mainHtml += `<div class=\"metric\"><span>New Retirement Balance:</span><span class=\"metric-value\">$${newRetirementBalance.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
             mainHtml += `<hr class=\"results-divider\">`;
             mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('interestCalc')\">Total Future Interest Avoided:</span></span><span class=\"metric-value\">$${totalInterestSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
@@ -837,7 +837,7 @@
             // Oversize-withdrawal warning if withdrawal dwarfs loan allocation and auto-withdraw is off
             if (!autoWithdraw && totalLoanPayments > 0 && withdrawal > totalLoanPayments * 2) {
                 const ratio = (withdrawal / (totalLoanPayments || 1)).toFixed(1);
-                mainHtml += `<div class=\"warning\"><strong>Warning:</strong> You're withdrawing $${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})} to fund $${totalLoanPayments.toLocaleString('en-US', {maximumFractionDigits: 0})} in paydowns (≈${ratio}×). Consider enabling \"Only withdraw what's needed\" to avoid excessive foregone growth.</div>`;
+                mainHtml += `<div class=\"warning\"><strong>Warning:</strong> You're withdrawing $${withdrawal.toLocaleString('en-US', {maximumFractionDigits: 0})} to fund $${totalLoanPayments.toLocaleString('en-US', {maximumFractionDigits: 0})} in paydowns (≈${ratio}×). <button class=\"btn btn-primary btn-compact\" onclick=\"shrinkWithdrawalToNeeded()\" style=\"margin-left: 8px;\">Shrink to Needed</button></div>`;
             }
             // Standard foregone growth
             mainHtml += `<div class=\"metric\"><span><span class=\"calc-link\" onclick=\"toggleCalcExplanation('foregoneCalc')\">Foregone Growth (Standard Scenario):</span></span><span class=\"metric-value\">$${futureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>`;
@@ -885,7 +885,8 @@
             }
             const effectiveFutureValueLost = marketTimingEnabled ? marketAdjustedFutureValueLost : futureValueLost;
             const netWealthImpact = totalInterestSaved - additionalTax - earlyPenalty - effectiveFutureValueLost + (rothRedirectEnabled ? rothFutureValue : 0);
-            mainHtml += `<div class=\"metric\"><span><strong><span class=\"calc-link\" onclick=\"toggleCalcExplanation('netImpactCalc')\">Net ${projectionYears}-Year Impact (All Factors):</span></strong></span><span class=\"metric-value\"><strong>${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong></span></div>`;
+            const marketTimingBadge = marketTimingEnabled ? ' <span style="background: #9b59b6; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7em; font-weight: normal;">MARKET CORRECTION</span>' : '';
+            mainHtml += `<div class=\"metric\"><span><strong><span class=\"calc-link\" onclick=\"toggleCalcExplanation('netImpactCalc')\">Net ${projectionYears}-Year Impact (All Factors):${marketTimingBadge}</span></strong></span><span class=\"metric-value\"><strong>${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong></span></div>`;
             const foregoneLabel = marketTimingEnabled ? `Foregone Growth (Market Correction): $${effectiveFutureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}` : `Foregone Growth: $${effectiveFutureValueLost.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
             mainHtml += `<div id=\"netImpactCalc\" class=\"calc-explanation\"><strong>Complete Financial Impact${marketTimingEnabled ? ' (Market Correction Scenario)' : ''}:</strong><br>+ Interest Saved: $${totalInterestSaved.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>- Taxes & Penalties: $${taxesPenalties.toLocaleString('en-US', {maximumFractionDigits: 0})}<br>- ${foregoneLabel}${rothRedirectEnabled ? '<br>+ Roth IRA Growth: $' + rothFutureValue.toLocaleString('en-US', {maximumFractionDigits: 0}) : ''}<br>= <strong>Net Impact: ${netWealthImpact >= 0 ? '+' : ''}$${netWealthImpact.toLocaleString('en-US', {maximumFractionDigits: 0})}</strong>${marketTimingEnabled ? '<br><br><em>This calculation uses the market correction scenario. Disable "Factor in potential market correction" to see standard scenario.</em>' : ''}</div>`;
 
@@ -1219,6 +1220,29 @@
             document.getElementById(`${loanId}_payment`).value = '380';
             
             updateCalculator();
+        }
+
+        // Shrink withdrawal to needed amount
+        function shrinkWithdrawalToNeeded() {
+            // Calculate total loan payments currently allocated
+            let totalLoanPayments = 0;
+            loans.forEach(loanId => {
+                const slider = document.getElementById(`${loanId}_paymentSlider`);
+                if (slider) {
+                    totalLoanPayments += parseFloat(slider.value) || 0;
+                }
+            });
+            
+            if (totalLoanPayments > 0) {
+                // Enable auto-withdraw which will calculate the exact amount needed
+                const autoWithdrawCheck = document.getElementById('autoWithdrawCheck');
+                if (autoWithdrawCheck) {
+                    autoWithdrawCheck.checked = true;
+                }
+                
+                // Trigger recalculation
+                calculateResults();
+            }
         }
 
         // CSV Export functionality
