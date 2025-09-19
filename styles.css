@@ -341,11 +341,45 @@ input:focus, select:focus {
     color: #555;
 }
 
+.checkbox-group {
+    display: table;
+    width: 100%;
+    border-spacing: 0;
+    margin-top: 10px;
+}
+
+.checkbox-group .inline-flex {
+    display: table-row;
+}
+
+.checkbox-group .inline-flex > input[type="checkbox"],
+.checkbox-group .inline-flex > strong {
+    display: table-cell;
+    vertical-align: top;
+    padding-bottom: 10px; /* Spacing between rows */
+}
+
+.checkbox-group .inline-flex > input[type="checkbox"] {
+    width: 20px;
+    padding-right: 4px;
+}
+
 .inline-flex {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: table;
+    width: 100%;
+    border-spacing: 0;
     cursor: pointer;
+}
+
+.inline-flex > input[type="checkbox"],
+.inline-flex > strong {
+    display: table-cell;
+    vertical-align: top;
+}
+
+.inline-flex > input[type="checkbox"] {
+    width: 20px;
+    padding-right: 4px; /* Reduced from 8px */
 }
 
 .roth-box {

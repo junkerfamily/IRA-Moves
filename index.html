@@ -163,26 +163,28 @@
             </div>
             
             <div class="form-group roth-box">
-                <label>
-                    <input type="checkbox" id="rothRedirectCheck" class="mr-3">
+                <label class="inline-flex">
+                    <input type="checkbox" id="rothRedirectCheck">
                     <strong>Redirect freed loan payments to Roth IRA?</strong>
                 </label>
                 <div id="rothRedirectOptions" class="hidden mt-15">
                     <label>Monthly amount to redirect to Roth IRA: $<span id="rothRedirectAmount">0</span> (<span id="rothRedirectPercent">0</span>% of loan payments)</label>
                     <input type="range" id="rothRedirectSlider" class="slider" min="0" max="1000" value="0" step="10">
-                    <div class="mt-10">
-                        <label class="inline-flex">
-                            <input type="checkbox" id="rothMaxRedirect" class="mr-3">
-                            <strong>Redirect 100% of freed payments</strong>
-                        </label>
-                        <small class="roth-note">Automatically sets slider to maximum available freed payments. Uncheck to manually set amount.</small>
-                    </div>
-                    <div class="mt-10">
-                        <label class="inline-flex">
-                            <input type="checkbox" id="rothTermRemaining" class="mr-3">
-                            <strong>Only redirect for remaining loan term</strong>
-                        </label>
-                        <small class="roth-note">Contributions stop when the originally scheduled payments would have ended, then continue compounding until the projection horizon.</small>
+                    <div class="checkbox-group">
+                        <div class="mt-10">
+                            <label class="inline-flex">
+                                <input type="checkbox" id="rothMaxRedirect" class="mr-3">
+                                <strong>Redirect 100% of freed payments</strong>
+                            </label>
+                            <small class="roth-note">Automatically sets slider to maximum available freed payments. Uncheck to manually set amount.</small>
+                        </div>
+                        <div class="mt-10">
+                            <label class="inline-flex">
+                                <input type="checkbox" id="rothTermRemaining" class="mr-3">
+                                <strong>Only redirect for remaining loan term</strong>
+                            </label>
+                            <small class="roth-note">Contributions stop when the originally scheduled payments would have ended, then continue compounding until the projection horizon.</small>
+                        </div>
                     </div>
                     <small class="roth-note">
                         <em>Note: This calculates the future value of redirecting loan payments into a Roth IRA with the same expected return.</em>
