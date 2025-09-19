@@ -1,0 +1,31 @@
+Here are the handful of usabildone - Roth redirect slider – Max defaults to at least 1000 even if freed payments are $0; could confuse ("why can I set $500 if nothing's freed?"). Maybe disable until ≥1 loan fully paid. ADDED: "Redirect 100% of freed payments" checkbox that defaults to checked for Roth accounts.ty questions / observations worth a quick look:
+
+Export CSV button – I don’t see any click handler wired to exportCsvBtn. Should it do something yet?
+
+Hidden placeholders – Many /* Lines xxx omitted */ spots (loan inputs, deduction panel, market timing options, Roth details) look like redacted code. Are those actually rendering in the live app, or are key controls currently missing?
+
+done - oan sliders default to full balance – Should they default to 0 (opt‑in) to avoid accidental full-payoff assumptions?
+
+Withdrawal vs. loan allocation – When auto-withdraw is OFF, user can greatly over-withdraw; you warn them, but should there be a quick “shrink to needed” button next to the warning?
+
+Infinity safeguards – Negative amortization returns { months: Infinity }; do you want a visible inline warning per affected loan (some code path collects a warning but the UI snippet for loan breakdown rows is omitted)?
+
+Breakeven explanation – Breakeven calc labels “(no growth)” but foregone growth is a major factor; do you want a second “growth-adjusted breakeven” or to clarify label?
+
+Market timing scenario – User may not realize the “Net X-Year Impact” switches to the correction scenario; should a toggle or badge appear inline near that metric?
+
+Roth withdrawal assumption – You state “assumes withdrawing contributions only”; do you need an optional field for “portion is earnings” to model taxes/penalty edge cases?
+
+Scenario saving – LocalStorage only: should you surface capacity/clear-all/manage scenarios UI (delete button)?
+
+Accessibility – Sliders only: should there be numeric inputs alongside for precise values and for keyboard users?
+
+Mobile layout – Two-column grids collapse, but long metric labels may wrap awkwardly; do you want truncation or accordion grouping?
+
+State tax model – Flat-rate applied to full withdrawal may mislead; do you want a tooltip hint that progressive state systems aren’t modeled?
+
+Remaining cash negative? – If constraint logic ever lags a frame, can remainingCash flash negative? (Didn’t see an explicit clamp.)
+
+Large projection years – 30-year foregone growth numbers can dwarf everything; consider a subtle “scale / logarithmic view” or sensitivity toggle?
+
+done? - Roth redirect slider – Max defaults to at least 1000 even if freed payments are $0; could confuse (“why can I set $500 if nothing’s freed?”). Maybe disable until ≥1 loan fully paid.

@@ -150,6 +150,21 @@
             border: none;
         }
         
+        .slider:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .slider:disabled::-webkit-slider-thumb {
+            cursor: not-allowed;
+            background: #bdc3c7;
+        }
+        
+        .slider:disabled::-moz-range-thumb {
+            cursor: not-allowed;
+            background: #bdc3c7;
+        }
+        
         .results {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -422,6 +437,13 @@
                 <div id="rothRedirectOptions" class="hidden mt-15">
                     <label>Monthly amount to redirect to Roth IRA: $<span id="rothRedirectAmount">0</span> (<span id="rothRedirectPercent">0</span>% of loan payments)</label>
                     <input type="range" id="rothRedirectSlider" class="slider" min="0" max="1000" value="0" step="10">
+                    <div class="mt-10">
+                        <label class="inline-flex">
+                            <input type="checkbox" id="rothMaxRedirect" class="mr-6">
+                            <strong>Redirect 100% of freed payments</strong>
+                        </label>
+                        <small class="roth-note">Automatically sets slider to maximum available freed payments. Uncheck to manually set amount.</small>
+                    </div>
                     <div class="mt-10">
                         <label class="inline-flex">
                             <input type="checkbox" id="rothTermRemaining" class="mr-6">
@@ -935,6 +957,18 @@
                 if (parseFloat(rothSlider.value) > freedMonthlyPayments && freedMonthlyPayments > 0) {
                     rothSlider.value = freedMonthlyPayments;
                 }
+                
+                // Auto-max functionality and disable slider when 100% redirect is checked
+                const rothMaxRedirect = document.getElementById('rothMaxRedirect')?.checked;
+                if (rothMaxRedirect && freedMonthlyPayments > 0) {
+                    rothSlider.value = freedMonthlyPayments;
+                    rothSlider.disabled = true;
+                    rothSlider.title = 'Slider disabled - using 100% of freed payments';
+                } else {
+                    rothSlider.disabled = false;
+                    rothSlider.title = '';
+                }
+                
                 updateRothDisplay();
             }
             lastFreedMonthly = freedMonthlyPayments;
@@ -1220,6 +1254,10 @@
                 // Hide the filing status note for traditional accounts
                 if (filingStatusNote) filingStatusNote.classList.add('hidden');
             }
+            
+            // Default to 100% redirect for all account types (money is post-tax after withdrawal)
+            const rothMaxRedirect = document.getElementById('rothMaxRedirect');
+            if (rothMaxRedirect) rothMaxRedirect.checked = true;
         }
 
         function toggleCalcExplanation(id) {
@@ -1257,6 +1295,7 @@
                 rothRedirectCheck: document.getElementById('rothRedirectCheck').checked,
                 rothRedirectSlider: document.getElementById('rothRedirectSlider').value,
                 rothTermRemaining: document.getElementById('rothTermRemaining').checked,
+                rothMaxRedirect: document.getElementById('rothMaxRedirect').checked,
                 // Market timing options
                 marketTimingEnabled: document.getElementById('marketTimingEnabled').checked,
                 marketCorrectionPct: document.getElementById('marketCorrectionPct').value,
@@ -1330,6 +1369,7 @@
             document.getElementById('rothRedirectCheck').checked = scenario.rothRedirectCheck;
             document.getElementById('rothRedirectSlider').value = scenario.rothRedirectSlider;
             document.getElementById('rothTermRemaining').checked = scenario.rothTermRemaining;
+            document.getElementById('rothMaxRedirect').checked = scenario.rothMaxRedirect;
             
             // Market timing options
             document.getElementById('marketTimingEnabled').checked = scenario.marketTimingEnabled || false;
@@ -1399,6 +1439,7 @@
             document.getElementById('rothRedirectCheck').checked = false;
             document.getElementById('rothRedirectSlider').value = 0;
             document.getElementById('rothTermRemaining').checked = false;
+            document.getElementById('rothMaxRedirect').checked = true;
             document.getElementById('marketTimingEnabled').checked = false;
             document.getElementById('marketCorrectionPct').value = '30';
             document.getElementById('recoveryTimeYears').value = '3';
@@ -1489,6 +1530,11 @@
             const rothTermRemaining = document.getElementById('rothTermRemaining');
             if (rothTermRemaining) {
                 rothTermRemaining.addEventListener('change', calculateResults);
+            }
+
+            const rothMaxRedirect = document.getElementById('rothMaxRedirect');
+            if (rothMaxRedirect) {
+                rothMaxRedirect.addEventListener('change', calculateResults);
             }
 
             // Market timing event listeners
