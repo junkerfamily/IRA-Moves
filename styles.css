@@ -313,6 +313,10 @@ input:focus, select:focus {
     margin-right: 6px;
 }
 
+.mr-3 {
+    margin-right: 3px;
+}
+
 .mt-5 {
     margin-top: 5px;
 }

@@ -78,7 +78,7 @@
                 <label class="mb-8">Deduction Options</label>
                 <div class="deduction-flex">
                     <label class="flex-1 no-bold"> 
-                        <input type="checkbox" id="applyStandardDeduction" checked class="mr-6"> Apply Standard Deduction
+                        <input type="checkbox" id="applyStandardDeduction" checked class="mr-3"> Apply Standard Deduction
                     </label>
                     <div class="flex-1-wide">
                         <label for="itemizedDeduction" class="no-bold">Itemized Deduction ($) <small>(overrides standard if > 0)</small></label>
@@ -104,7 +104,7 @@
             <h2>📈 Market Outlook (Optional)</h2>
             <div class="form-group">
                 <label class="inline-flex">
-                    <input type="checkbox" id="marketTimingEnabled" class="mr-6">
+                    <input type="checkbox" id="marketTimingEnabled" class="mr-3">
                     <strong>Factor in potential market correction</strong>
                 </label>
                 <small class="panel-note">If you believe the market is overvalued and due for a correction, this adjusts the foregone growth calculation to reflect potential downside risk.</small>
@@ -144,7 +144,7 @@
             </div>
             <div class="form-group">
                 <label class="inline-flex">
-                    <input type="checkbox" id="autoWithdrawCheck" class="mr-6">
+                    <input type="checkbox" id="autoWithdrawCheck" class="mr-3">
                     <strong>Only withdraw what's needed for selected paydowns</strong>
                 </label>
                 <small class="roth-note" id="autoWithdrawNote">Automatically sizes the withdrawal to cover loan allocations after tax and penalties. Prevents oversized withdrawals and inflated foregone-growth penalties.</small>
@@ -164,7 +164,7 @@
             
             <div class="form-group roth-box">
                 <label>
-                    <input type="checkbox" id="rothRedirectCheck" class="mr-6">
+                    <input type="checkbox" id="rothRedirectCheck" class="mr-3">
                     <strong>Redirect freed loan payments to Roth IRA?</strong>
                 </label>
                 <div id="rothRedirectOptions" class="hidden mt-15">
@@ -172,14 +172,14 @@
                     <input type="range" id="rothRedirectSlider" class="slider" min="0" max="1000" value="0" step="10">
                     <div class="mt-10">
                         <label class="inline-flex">
-                            <input type="checkbox" id="rothMaxRedirect" class="mr-6">
+                            <input type="checkbox" id="rothMaxRedirect" class="mr-3">
                             <strong>Redirect 100% of freed payments</strong>
                         </label>
                         <small class="roth-note">Automatically sets slider to maximum available freed payments. Uncheck to manually set amount.</small>
                     </div>
                     <div class="mt-10">
                         <label class="inline-flex">
-                            <input type="checkbox" id="rothTermRemaining" class="mr-6">
+                            <input type="checkbox" id="rothTermRemaining" class="mr-3">
                             <strong>Only redirect for remaining loan term</strong>
                         </label>
                         <small class="roth-note">Contributions stop when the originally scheduled payments would have ended, then continue compounding until the projection horizon.</small>
