@@ -471,9 +471,8 @@
             let withdrawal = parseFloat(document.getElementById('withdrawalSlider').value) || 0;
             const projectionYears = parseInt(document.getElementById('projectionYears')?.value || '10', 10);
             const contribMonths = projectionYears * 12; // full-horizon months
-            // Roth redirect inputs (we'll compute contributions after we know paid-off loans)
+            // Roth redirect inputs (we'll read the slider value after updating it based on freed payments)
             const rothRedirectEnabled = document.getElementById('rothRedirectCheck').checked;
-            const rothMonthlyAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
             let rothFutureValue = 0;
             let rothContributions = 0;
             const applyStd = document.getElementById('applyStandardDeduction').checked;
@@ -721,6 +720,8 @@
             const immediateCashImpact = - (additionalTax + earlyPenalty);
 
             // Compute Roth contributions and FV now that we know which loans were fully paid
+            // Read the slider value AFTER it has been updated based on freed payments
+            const rothMonthlyAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
             if (rothRedirectEnabled && rothMonthlyAmount > 0) {
                 const monthlyRate = expectedReturn / 12;
                 const totalHorizonMonths = contribMonths;
