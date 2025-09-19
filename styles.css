@@ -1,0 +1,515 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+.section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    border-left: 5px solid #3498db;
+}
+
+.section h2 {
+    color: #2c3e50;
+    margin-top: 0;
+    font-size: 1.5em;
+}
+
+.form-group {
+    margin: 15px 0;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #34495e;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+.loan-item {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.loan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #229954;
+}
+
+.slider-container {
+    margin: 20px 0;
+}
+
+.slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: #ddd;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3498db;
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3498db;
+    cursor: pointer;
+    border: none;
+}
+
+.slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.slider:disabled::-webkit-slider-thumb {
+    cursor: not-allowed;
+    background: #bdc3c7;
+}
+
+.slider:disabled::-moz-range-thumb {
+    cursor: not-allowed;
+    background: #bdc3c7;
+}
+
+.results {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.results h2 {
+    margin-top: 0;
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+}
+
+.metric-value {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tax-info {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 15px 0;
+    color: #333;
+}
+
+.warning {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 15px 0;
+}
+
+.loan-breakdown-wrapper {
+    background: rgba(255,255,255,0.08);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.loan-breakdown-item {
+    margin: 6px 0;
+}
+
+.loan-breakdown-item details {
+    background: rgba(0,0,0,0.15);
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+
+.loan-breakdown-item details[open] {
+    background: rgba(0,0,0,0.25);
+}
+
+.loan-breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(170px,1fr));
+    gap: 6px 12px;
+    margin-top: 10px;
+    font-size: 0.85em;
+}
+
+.loan-breakdown-grid div {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.08);
+    padding: 4px 6px;
+    border-radius: 4px;
+}
+
+.loan-breakdown-grid span.highlight {
+    font-weight: 600;
+    color: #ffe28a;
+}
+
+.loan-breakdown-help {
+    font-size: 0.75em;
+    opacity: 0.8;
+    margin-bottom: 6px;
+}
+
+.warning-item {
+    color: #ffb3b3;
+    font-size: 0.85em;
+}
+
+/* New utility / refactor classes */
+.panel-note {
+    font-size: 0.75em;
+    opacity: 0.8;
+    display: block;
+    margin-top: 6px;
+}
+
+.deduction-panel {
+    grid-column: 1 / -1;
+    background: #eef3ff;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #4b7bd8;
+}
+
+.deduction-flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.flex-1 {
+    flex: 1;
+    min-width: 180px;
+}
+
+.flex-1-wide {
+    flex: 1;
+    min-width: 200px;
+}
+
+.flex-1-mid {
+    flex: 1;
+    min-width: 190px;
+}
+
+.no-bold {
+    font-weight: 400;
+}
+
+.mr-6 {
+    margin-right: 6px;
+}
+
+.mt-5 {
+    margin-top: 5px;
+}
+
+.mt-10 {
+    margin-top: 10px;
+}
+
+.mt-15 {
+    margin-top: 15px;
+}
+
+.penalty-box {
+    margin-top: 5px;
+    background: #f4f0ff;
+    padding: 10px;
+    border-radius: 6px;
+    border-left: 4px solid #8e44ad;
+}
+
+.penalty-box small {
+    color: #555;
+}
+
+.inline-flex {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.roth-box {
+    background: #e8f5e8;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #27ae60;
+}
+
+.roth-note {
+    color: #666;
+    display: block;
+    margin-top: 5px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.btn-compact {
+    padding: 6px 14px;
+    font-size: 0.8em;
+}
+
+.impact-immediate {
+    background: rgba(155, 89, 182, 0.3);
+    border-left: 4px solid #9b59b6;
+}
+
+.impact-penalty {
+    background: rgba(142,68,173,0.25);
+    border-left: 4px solid #8e44ad;
+}
+
+.impact-roth {
+    background: rgba(39, 174, 96, 0.2);
+    border-left: 4px solid #27ae60;
+}
+
+.tax-rate-wrapper {
+    margin-top: 16px;
+}
+
+.assumptions-block {
+    margin-top: 10px;
+    background: rgba(255,255,255,0.12);
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.assumptions-block ul {
+    margin: 8px 0 0 18px;
+}
+
+.assumptions-block li {
+    margin: 4px 0;
+}
+
+.header-links {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.link-docs {
+    color: #3498db;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.link-docs:hover {
+    text-decoration: underline;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.footer a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.summary-strong {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.results-divider {
+    border-color: rgba(255,255,255,0.3);
+}
+
+.m-0 {
+    margin: 0;
+}
+
+.assumptions-note {
+    margin-top: 6px;
+    font-size: 0.85em;
+    opacity: 0.85;
+}
+
+.calc-explanation {
+    background: rgba(255,255,255,0.15);
+    margin: 8px 0;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    line-height: 1.4;
+    border-left: 3px solid rgba(255,255,255,0.4);
+    display: none;
+}
+
+.calc-explanation.show {
+    display: block;
+}
+
+.calc-link {
+    cursor: pointer;
+    text-decoration: underline;
+    opacity: 0.9;
+}
+
+.calc-link:hover {
+    opacity: 1;
+    color: #FFE5B4;
+}
+
+.filing-status-note {
+    font-weight: normal;
+    color: #666;
+}
+
+/* Scenario loader specific styles */
+#scenario-loader {
+    margin-bottom: 20px;
+}
+
+/* Additional styles for dynamic content */
+.tax-advantage-roth {
+    background: #e8f5e8 !important;
+    border-color: #27ae60 !important;
+}
+
+.link-detailed-examples {
+    color: #FFE5B4;
+}
+
+.results-divider {
+    border-color: rgba(255,255,255,0.3);
+}
+
+.tax-rate-summary {
+    cursor: pointer;
+    font-weight: 600;
+}
