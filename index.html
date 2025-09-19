@@ -1168,6 +1168,7 @@
 
             // Update UI based on loaded account type
             updateAccountTypeUI();
+            updateWithdrawalSliderAppearance();
             updateCalculator();
             
             // Track the currently loaded scenario
@@ -1238,6 +1239,22 @@
             document.getElementById(`${loanId}_payment`).value = '380';
             
             updateCalculator();
+        }
+
+        // Update withdrawal slider appearance based on auto-withdraw mode
+        function updateWithdrawalSliderAppearance() {
+            const withdrawalSlider = document.getElementById('withdrawalSlider');
+            const autoWithdraw = document.getElementById('autoWithdrawCheck')?.checked || false;
+            
+            if (withdrawalSlider) {
+                if (autoWithdraw) {
+                    withdrawalSlider.classList.add('auto-controlled');
+                    withdrawalSlider.title = 'Auto-controlled - withdrawal amount calculated automatically';
+                } else {
+                    withdrawalSlider.classList.remove('auto-controlled');
+                    withdrawalSlider.title = '';
+                }
+            }
         }
 
         // Update loan slider constraints based on available cash
@@ -1558,6 +1575,9 @@
             // Initialize market timing UI
             updateMarketTimingUI();
             
+            // Initialize withdrawal slider appearance
+            updateWithdrawalSliderAppearance();
+            
             // Load scenario dropdown
             loadScenarioList();
             
@@ -1570,7 +1590,10 @@
             // Add event listeners for checkboxes
             const autoWithdrawCheck = document.getElementById('autoWithdrawCheck');
             if (autoWithdrawCheck) {
-                autoWithdrawCheck.addEventListener('change', calculateResults);
+                autoWithdrawCheck.addEventListener('change', function() {
+                    updateWithdrawalSliderAppearance();
+                    calculateResults();
+                });
             }
 
             const rothRedirectCheck = document.getElementById('rothRedirectCheck');
