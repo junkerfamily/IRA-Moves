@@ -452,6 +452,16 @@
             
             // Create loan payoff sliders
             const slidersDiv = document.getElementById('loanSliders');
+            
+            // Preserve existing slider values before recreating
+            const existingValues = {};
+            loans.forEach(loanId => {
+                const existingSlider = document.getElementById(`${loanId}_paymentSlider`);
+                if (existingSlider) {
+                    existingValues[loanId] = parseFloat(existingSlider.value) || 0;
+                }
+            });
+            
             slidersDiv.innerHTML = '';
             
             let totalMonthlyPayments = 0;
@@ -461,6 +471,10 @@
                 const monthlyPayment = parseFloat(document.getElementById(`${loanId}_payment`).value) || 0;
                 const purpose = document.getElementById(`${loanId}_purpose`).value || 'Loan';
                 
+                // Use preserved value or default to 0
+                const preservedValue = existingValues[loanId] || 0;
+                const clampedValue = Math.min(preservedValue, balance); // Don't exceed new balance
+                
                 totalMonthlyPayments += monthlyPayment;
                 
                 const sliderDiv = document.createElement('div');
@@ -468,8 +482,8 @@
                 sliderDiv.innerHTML = `
                     <label>Pay towards ${purpose}: $<span id="${loanId}_paymentAmount">0</span></label>
                     <div class="slider-input-container">
-                        <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="0" step="1">
-                        <input type="number" id="${loanId}_paymentInput" class="numeric-input" min="0" max="${balance}" value="0" step="1">
+                        <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="${clampedValue}" step="1">
+                        <input type="number" id="${loanId}_paymentInput" class="numeric-input" min="0" max="${balance}" value="${clampedValue}" step="1">
                     </div>
                 `;
                 slidersDiv.appendChild(sliderDiv);
