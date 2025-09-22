@@ -140,7 +140,10 @@
             <h2>🎯 Payoff Strategy</h2>
             <div class="form-group">
                 <label for="withdrawalSlider">Retirement Withdrawal Amount: $<span id="withdrawalAmount">0</span></label>
-                <input type="range" id="withdrawalSlider" class="slider" min="0" max="100000" value="0" step="100">
+                <div class="slider-input-container">
+                    <input type="range" id="withdrawalSlider" class="slider" min="0" max="100000" value="0" step="100">
+                    <input type="number" id="withdrawalInput" class="numeric-input" min="0" max="100000" value="0" step="100">
+                </div>
             </div>
             <div class="form-group">
                 <label class="inline-flex">
@@ -169,7 +172,10 @@
                 </label>
                 <div id="rothRedirectOptions" class="hidden mt-15">
                     <label>Monthly amount to redirect to Roth IRA: $<span id="rothRedirectAmount">0</span> (<span id="rothRedirectPercent">0</span>% of loan payments)</label>
-                    <input type="range" id="rothRedirectSlider" class="slider" min="0" max="1000" value="0" step="10">
+                    <div class="slider-input-container">
+                        <input type="range" id="rothRedirectSlider" class="slider" min="0" max="1000" value="0" step="10">
+                        <input type="number" id="rothRedirectInput" class="numeric-input" min="0" max="1000" value="0" step="10">
+                    </div>
                     <div class="checkbox-group">
                         <div class="mt-10">
                             <label class="inline-flex">
@@ -201,6 +207,16 @@
         <div class="footer">
             <a href="docs.html" target="_blank" rel="noopener">📚 Documentation Hub</a> | 
             <a href="quick-start.html" target="_blank" rel="noopener">🚀 Quick Start Guide</a>
+        </div>
+    </div>
+
+    <!-- Floating Net Impact Display -->
+    <div id="floatingImpact" class="floating-impact">
+        <div class="floating-impact-title">Net <span id="floatingYears">10</span>-Year Impact</div>
+        <div id="floatingImpactValue" class="floating-impact-value">$0</div>
+        <div class="floating-impact-subtitle">
+            All Factors Included
+            <span id="floatingImpactBadge" class="floating-impact-badge"></span>
         </div>
     </div>
 
@@ -423,6 +439,9 @@
             } else {
                 calculatorSection.classList.add('hidden');
                 resultsSection.classList.add('hidden');
+                // Hide floating impact when no loans
+                const floatingDiv = document.getElementById('floatingImpact');
+                if (floatingDiv) floatingDiv.classList.remove('visible');
             }
         }
         
@@ -448,11 +467,28 @@
                 sliderDiv.className = 'slider-container';
                 sliderDiv.innerHTML = `
                     <label>Pay towards ${purpose}: $<span id="${loanId}_paymentAmount">0</span></label>
-                    <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="0" step="1">
+                    <div class="slider-input-container">
+                        <input type="range" id="${loanId}_paymentSlider" class="slider" min="0" max="${balance}" value="0" step="1">
+                        <input type="number" id="${loanId}_paymentInput" class="numeric-input" min="0" max="${balance}" value="0" step="1">
+                    </div>
                 `;
                 slidersDiv.appendChild(sliderDiv);
                 
-                document.getElementById(`${loanId}_paymentSlider`).addEventListener('input', (e) => { lastLoanSliderChanged = loanId; updateLoanSliderConstraints(); calculateResults(); });
+                document.getElementById(`${loanId}_paymentSlider`).addEventListener('input', (e) => { lastLoanSliderChanged = loanId; updateLoanSliderConstraints(); calculateResults(); syncLoanInputs(); });
+                
+                document.getElementById(`${loanId}_paymentInput`).addEventListener('input', (e) => {
+                    const input = e.target;
+                    const slider = document.getElementById(`${loanId}_paymentSlider`);
+                    const value = parseFloat(input.value) || 0;
+                    const max = parseFloat(slider.max) || 0;
+                    const clampedValue = Math.min(Math.max(value, 0), max);
+                    slider.value = clampedValue;
+                    input.value = clampedValue;
+                    lastLoanSliderChanged = loanId;
+                    updateLoanSliderConstraints();
+                    calculateResults();
+                    syncLoanInputs();
+                });
             });
             
             // Update Roth redirect slider max
@@ -460,6 +496,13 @@
             if (rothSlider) {
                 // Max will be set during calculateResults based on actually freed payments
             }
+            
+            // Sync all inputs after creating sliders
+            setTimeout(() => {
+                syncLoanInputs();
+                syncWithdrawalInput();
+                syncRothRedirectInput();
+            }, 10);
         }
         
     let lastFreedMonthly = 0; // tracks max available to redirect
@@ -731,6 +774,7 @@
                 }
                 
                 updateRothDisplay();
+                syncRothRedirectInput();
             }
             lastFreedMonthly = freedMonthlyPayments;
 
@@ -975,13 +1019,100 @@
             
             // Clear and set the complete results content in one operation
             resultsContent.innerHTML = mainHtml;
+            
+            // Update floating impact display
+            updateFloatingImpact(netWealthImpact, projectionYears, marketTimingEnabled);
+            
+            // Sync all inputs after calculations update slider values
+            setTimeout(() => {
+                syncWithdrawalInput();
+                syncRothRedirectInput();
+                syncLoanInputs();
+            }, 10);
+        }
+        
+        function updateFloatingImpact(netImpact, years, hasMarketTiming) {
+            const floatingDiv = document.getElementById('floatingImpact');
+            const valueDiv = document.getElementById('floatingImpactValue');
+            const yearsSpan = document.getElementById('floatingYears');
+            const badgeSpan = document.getElementById('floatingImpactBadge');
+            
+            if (!floatingDiv || !valueDiv) return;
+            
+            // Show/hide based on whether we have valid results
+            const hasValidResults = loans.length > 0 && !isNaN(netImpact) && netImpact !== 0;
+            
+            if (hasValidResults) {
+                // Update the values
+                yearsSpan.textContent = years;
+                const formattedValue = (netImpact >= 0 ? '+' : '') + '$' + Math.abs(netImpact).toLocaleString('en-US', {maximumFractionDigits: 0});
+                valueDiv.textContent = formattedValue;
+                
+                // Update styling based on positive/negative
+                valueDiv.className = 'floating-impact-value ' + (netImpact >= 0 ? 'floating-impact-positive' : 'floating-impact-negative');
+                
+                // Update badge for market timing
+                if (hasMarketTiming) {
+                    badgeSpan.textContent = 'MARKET CORRECTION';
+                    badgeSpan.style.display = 'inline-block';
+                } else {
+                    badgeSpan.style.display = 'none';
+                }
+                
+                // Show the floating display
+                floatingDiv.classList.add('visible');
+            } else {
+                // Hide the floating display
+                floatingDiv.classList.remove('visible');
+            }
+        }
+
+        function syncWithdrawalInput() {
+            const slider = document.getElementById('withdrawalSlider');
+            const input = document.getElementById('withdrawalInput');
+            if (slider && input) {
+                input.value = slider.value;
+                input.disabled = slider.disabled;
+            }
+        }
+
+        function syncRothRedirectInput() {
+            const slider = document.getElementById('rothRedirectSlider');
+            const input = document.getElementById('rothRedirectInput');
+            if (slider && input) {
+                input.value = slider.value;
+                input.disabled = slider.disabled;
+            }
+        }
+
+        function syncLoanInputs() {
+            loans.forEach(loanId => {
+                const slider = document.getElementById(`${loanId}_paymentSlider`);
+                const input = document.getElementById(`${loanId}_paymentInput`);
+                if (slider && input) {
+                    input.value = slider.value;
+                    input.disabled = slider.disabled;
+                }
+            });
         }
 
         function updateRothDisplay() {
-            const monthlyAmount = parseFloat(document.getElementById('rothRedirectSlider').value) || 0;
-            document.getElementById('rothRedirectAmount').textContent = monthlyAmount.toLocaleString('en-US', {maximumFractionDigits: 0});
-            const percentage = lastFreedMonthly > 0 ? ((monthlyAmount / lastFreedMonthly) * 100) : 0;
-            document.getElementById('rothRedirectPercent').textContent = percentage.toFixed(0);
+            const rothSlider = document.getElementById('rothRedirectSlider');
+            const rothAmount = document.getElementById('rothRedirectAmount');
+            const rothPercent = document.getElementById('rothRedirectPercent');
+            
+            if (rothSlider && rothAmount) {
+                const value = parseFloat(rothSlider.value) || 0;
+                rothAmount.textContent = value.toLocaleString('en-US', {maximumFractionDigits: 0});
+                
+                // Calculate percentage of freed monthly payments
+                if (rothPercent && lastFreedMonthly > 0) {
+                    const percent = Math.round((value / lastFreedMonthly) * 100);
+                    rothPercent.textContent = percent;
+                } else if (rothPercent) {
+                    rothPercent.textContent = '0';
+                }
+            }
         }
 
         function updateMarketTimingUI() {
@@ -1064,12 +1195,18 @@
                 marketTimingEnabled: document.getElementById('marketTimingEnabled').checked,
                 marketCorrectionPct: document.getElementById('marketCorrectionPct').value,
                 recoveryTimeYears: document.getElementById('recoveryTimeYears').value,
-                loans: loans.map(loanId => ({
-                    purpose: document.getElementById(`${loanId}_purpose`).value,
-                    rate: document.getElementById(`${loanId}_rate`).value,
-                    balance: document.getElementById(`${loanId}_balance`).value,
-                    payment: document.getElementById(`${loanId}_payment`).value,
-                }))
+                // Withdrawal strategy
+                withdrawalSlider: document.getElementById('withdrawalSlider').value,
+                loans: loans.map(loanId => {
+                    const paymentSlider = document.getElementById(`${loanId}_paymentSlider`);
+                    return {
+                        purpose: document.getElementById(`${loanId}_purpose`).value,
+                        rate: document.getElementById(`${loanId}_rate`).value,
+                        balance: document.getElementById(`${loanId}_balance`).value,
+                        payment: document.getElementById(`${loanId}_payment`).value,
+                        paymentSliderValue: paymentSlider ? paymentSlider.value : '0'
+                    };
+                })
             };
 
             localStorage.setItem(`scenario_${name}`, JSON.stringify(scenario));
@@ -1109,8 +1246,9 @@
 
             const scenario = JSON.parse(scenarioJSON);
 
-            // Reset current state
-            resetApp();
+            // Reset current state (but preserve dropdown selection)
+            const isLoadingScenario = true;
+            resetApp(isLoadingScenario);
             document.getElementById('loansList').innerHTML = '';
             loans = [];
             loanCounter = 0;
@@ -1140,6 +1278,11 @@
             document.getElementById('marketCorrectionPct').value = scenario.marketCorrectionPct || '30';
             document.getElementById('recoveryTimeYears').value = scenario.recoveryTimeYears || '3';
             
+            // Withdrawal strategy
+            if (scenario.withdrawalSlider) {
+                document.getElementById('withdrawalSlider').value = scenario.withdrawalSlider;
+            }
+            
             // Update options visibility based on checkbox states
             const rothOptionsPanel = document.getElementById('rothRedirectOptions');
             if (rothOptionsPanel) {
@@ -1167,6 +1310,22 @@
                 document.getElementById(`${loanId}_balance`).value = loanData.balance;
                 document.getElementById(`${loanId}_payment`).value = loanData.payment;
             });
+            
+            // Load loan payment slider values after sliders are created
+            setTimeout(() => {
+                scenario.loans.forEach((loanData, index) => {
+                    if (loanData.paymentSliderValue && loans[index]) {
+                        const loanId = loans[index];
+                        const slider = document.getElementById(`${loanId}_paymentSlider`);
+                        if (slider) {
+                            slider.value = loanData.paymentSliderValue;
+                        }
+                    }
+                });
+                
+                // Trigger calculations to update withdrawal amount and all dependent values
+                calculateResults();
+            }, 50);
 
             // Update UI based on loaded account type
             updateAccountTypeUI();
@@ -1179,15 +1338,24 @@
             // Ensure Roth display is updated after scenario load
             setTimeout(() => {
                 updateRothDisplay();
+                syncWithdrawalInput();
+                syncRothRedirectInput();
+                syncLoanInputs();
             }, 100);
+            
+            // Set the dropdown to show the loaded scenario (after a short delay to ensure all updates are complete)
+            setTimeout(() => {
+                const select = document.getElementById('scenarioSelect');
+                if (select) select.value = name;
+            }, 150);
         });
 
         // Missing helper functions
-        function resetApp() {
+        function resetApp(preserveDropdown = false) {
             // Clear current scenario tracking
             currentScenarioName = null;
             const select = document.getElementById('scenarioSelect');
-            if (select) select.value = '';
+            if (select && !preserveDropdown) select.value = '';
             
             document.getElementById('taxableIncome').value = '';
             document.getElementById('filingStatus').value = 'single';
@@ -1580,6 +1748,13 @@
             // Initialize withdrawal slider appearance
             updateWithdrawalSliderAppearance();
             
+            // Sync initial values
+            setTimeout(() => {
+                syncWithdrawalInput();
+                syncRothRedirectInput();
+                syncLoanInputs();
+            }, 100);
+            
             // Load scenario dropdown
             loadScenarioList();
             
@@ -1615,7 +1790,23 @@
 
             const rothRedirectSlider = document.getElementById('rothRedirectSlider');
             if (rothRedirectSlider) {
-                rothRedirectSlider.addEventListener('input', updateRothDisplay);
+                rothRedirectSlider.addEventListener('input', function() {
+                    updateRothDisplay();
+                    calculateResults();
+                    syncRothRedirectInput();
+                });
+            }
+
+            const rothRedirectInput = document.getElementById('rothRedirectInput');
+            if (rothRedirectInput) {
+                rothRedirectInput.addEventListener('input', function() {
+                    const value = parseFloat(this.value) || 0;
+                    const max = parseFloat(rothRedirectSlider.max) || 1000;
+                    const clampedValue = Math.min(Math.max(value, 0), max);
+                    rothRedirectSlider.value = clampedValue;
+                    this.value = clampedValue;
+                    updateRothDisplay();
+                });
             }
 
             const rothTermRemaining = document.getElementById('rothTermRemaining');
@@ -1672,6 +1863,20 @@
             if (withdrawalSlider) {
                 withdrawalSlider.addEventListener('input', function() {
                     updateLoanSliderConstraints(); 
+                    calculateResults();
+                    syncWithdrawalInput();
+                });
+            }
+
+            const withdrawalInput = document.getElementById('withdrawalInput');
+            if (withdrawalInput) {
+                withdrawalInput.addEventListener('input', function() {
+                    const value = parseFloat(this.value) || 0;
+                    const max = parseFloat(withdrawalSlider.max) || 100000;
+                    const clampedValue = Math.min(Math.max(value, 0), max);
+                    withdrawalSlider.value = clampedValue;
+                    this.value = clampedValue;
+                    updateLoanSliderConstraints();
                     calculateResults();
                 });
             }

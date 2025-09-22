@@ -10,18 +10,13 @@ Here are usability questions and observations worth considering for future impro
 - **✅ Remaining cash negative clamp** – Remaining cash now clamped to $0 minimum to prevent confusing negative display
 - **✅ Market timing scenario indicator** – Added visual badge when Net Impact uses market correction scenario  
 - **✅ Shrink to needed button** – Added quick-fix button for over-withdrawal warnings
+- **✅ Accessibility** – Numeric inputs now implemented alongside all sliders for precise values and keyboard accessibility
 
 ## 🔄 Outstanding Suggestions
 
 ### UI/UX Improvements
 
 - **Hidden placeholders** – Many `/* Lines xxx omitted */` spots (loan inputs, deduction panel, market timing options, Roth details) look like redacted code. Are those actually rendering in the live app, or are key controls currently missing?
-
-
-
-- **Accessibility** – Sliders only: should there be numeric inputs alongside for precise values and for keyboard users?
-
-- **Mobile layout** – Two-column grids collapse, but long metric labels may wrap awkwardly; do you want truncation or accordion grouping?
 
 ### Calculation & Display
 

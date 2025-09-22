@@ -158,6 +158,39 @@ input:focus, select:focus {
     background: #bdc3c7;
 }
 
+.slider-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.slider-input-container .slider {
+    flex: 1;
+    margin: 0;
+}
+
+.numeric-input {
+    width: 100px;
+    flex-shrink: 0;
+    padding: 5px 8px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.numeric-input:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+.numeric-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f8f9fa;
+}
+
 .results {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -193,6 +226,18 @@ input:focus, select:focus {
 @media (max-width: 768px) {
     .grid {
         grid-template-columns: 1fr;
+    }
+    
+    .slider-input-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+    
+    .numeric-input {
+        width: 100%;
+        max-width: 150px;
+        align-self: center;
     }
 }
 
@@ -567,4 +612,82 @@ input:focus, select:focus {
 .slider.auto-controlled::-moz-range-thumb {
     background: #95a5a6;
     cursor: not-allowed;
+}
+
+/* Floating Net Impact Display */
+.floating-impact {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 1000;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-width: 190px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.floating-impact.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.floating-impact-title {
+    font-size: 0.7em;
+    opacity: 0.9;
+    margin-bottom: 3px;
+    font-weight: normal;
+}
+
+.floating-impact-value {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.floating-impact-positive {
+    color: #4ade80;
+}
+
+.floating-impact-negative {
+    color: #f87171;
+}
+
+.floating-impact-subtitle {
+    font-size: 0.6em;
+    opacity: 0.8;
+    font-weight: normal;
+}
+
+.floating-impact-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 0.5em;
+    font-weight: normal;
+    margin-left: 3px;
+}
+
+@media (max-width: 768px) {
+    .floating-impact {
+        top: 8px;
+        right: 8px;
+        left: 8px;
+        min-width: auto;
+        padding: 8px 12px;
+    }
+    
+    .floating-impact-value {
+        font-size: 1.1em;
+    }
 }
